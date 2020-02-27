@@ -5,18 +5,18 @@
     tools:context=".Main">
 
 
-
-        //android:id="@+id/action_gps"
+    <item
+        android:id="@+id/action_gps"
         android:icon="@android:drawable/ic_dialog_map"
         android:title="@string/MenuGPS"
-        app:showAsAction="ifRoom">
+        app:showAsAction="ifRoom"></item>
     <item
         android:id="@+id/action_infos"
         android:icon="@android:drawable/ic_dialog_info"
         android:title="@string/MenuInfos"
         app:showAsAction="ifRoom"/>
-
-        //android:id="@+id/action_bar_notifs"
+    <item
+        android:id="@+id/action_bar_notifs"
         android:actionLayout="@layout/switch_item"
         android:checkable="true"
         android:title="@string/MenuNotif"

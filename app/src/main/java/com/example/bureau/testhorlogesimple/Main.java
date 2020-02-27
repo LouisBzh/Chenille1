@@ -243,24 +243,19 @@ public class Main extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
         //Set the notifications menu item checked corresponding to preferences
-        /*Available next version
         menu.findItem(R.id.action_bar_notifs).setChecked(myVar.getBoolean("notifsEnable",true));
-         */
         return true;
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle item selection
         switch (item.getItemId()) {
-            /* Available next version
             case R.id.action_gps:
                 startActivity(new Intent(Main.this, MapsActivity.class));
                 return true;
-            */
             case R.id.action_infos: //Pop-up d'informations
                 Toast.makeText(getBaseContext(), "Créé par Louis Le Nézet", Toast.LENGTH_SHORT).show();
                 return true;
-            /*Available next version
             case R.id.action_bar_notifs: //Autorisation ou non des notifications GPS
                 if(item.isChecked()){
                     Toast.makeText(getBaseContext(), "Notifications désactivées", Toast.LENGTH_SHORT).show();
@@ -273,7 +268,6 @@ public class Main extends AppCompatActivity {
                 }
                 myVarEditor.commit();
                 return true;
-             */
             case R.id.action_aiguille: //Choix de l'aiguille a afficher
                 AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
                 builder.setTitle("Choisissez l'aiguille à afficher:");
