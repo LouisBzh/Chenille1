@@ -271,7 +271,7 @@ public class Main extends AppCompatActivity {
             case R.id.action_aiguille: //Choix de l'aiguille a afficher
                 AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
                 builder.setTitle("Choisissez l'aiguille à afficher:");
-                builder.setSingleChoiceItems(personID, 0, new DialogInterface.OnClickListener() {
+                builder.setSingleChoiceItems(personID, myVar.getInt("aigChoosed",8)-1, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
                     }
@@ -306,15 +306,7 @@ public class Main extends AppCompatActivity {
     }
     @Override
     protected void onDestroy(){
-        /*
-        myVarEditor.putBoolean("Famille", false);
-        myVarEditor.putBoolean("Travail", false);
-        myVarEditor.putBoolean("Joker", false);
-        myVarEditor.putBoolean("A la maison", false);
-        myVarEditor.commit();
-         */
-
-        super.onDestroy();
+         super.onDestroy();
     }
 
 }

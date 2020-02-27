@@ -19,8 +19,9 @@ import android.widget.Toast;
 
 
 public class ProximityReceiver extends BroadcastReceiver {
-    SharedPreferences positionGps;
-    SharedPreferences notifsPref;
+    public static final String MY_PREF="mesPrefs";
+    SharedPreferences myVar;
+    SharedPreferences.Editor myVarEditor;
     String notificationTitle;
     String notificationContent;
     String tickerMessage;
@@ -32,10 +33,9 @@ public class ProximityReceiver extends BroadcastReceiver {
         context.startService(background);
         // TODO Auto-generated method stub
         Log.d("Intent1","Intent received");
-        positionGps=context.getSharedPreferences("positionGps",context.MODE_PRIVATE);
-        notifsPref=context.getSharedPreferences("notifsPref",Context.MODE_PRIVATE);
-        SharedPreferences.Editor positionGpsEditor = positionGps.edit();
-        Boolean notifDisplay=notifsPref.getBoolean("Notifs",true);
+        myVar=context.getSharedPreferences(MY_PREF,context.MODE_PRIVATE);
+        myVarEditor = myVar.edit();
+        Boolean notifDisplay=myVar.getBoolean("notifsEnable",true);
 
         Boolean proximity_entering = intent.getBooleanExtra(LocationManager.KEY_PROXIMITY_ENTERING, false);
         String proximity_name = intent.getStringExtra("name");
@@ -45,15 +45,15 @@ public class ProximityReceiver extends BroadcastReceiver {
             notificationTitle="Proximity - Entry";
             notificationContent= proximity_name;
             tickerMessage = proximity_name;
-            positionGpsEditor.putBoolean(proximity_name,true);
-            positionGpsEditor.commit();
+            myVarEditor.putBoolean("in"+proximity_name+"GPS",true);
+            myVarEditor.commit();
         }else{
             Toast.makeText(context,"Exiting the region"  ,Toast.LENGTH_LONG).show();
             notificationTitle="Proximity - Exit";
             notificationContent=proximity_name;
             tickerMessage = proximity_name;
-            positionGpsEditor.putBoolean(proximity_name,false);
-            positionGpsEditor.commit();
+            myVarEditor.putBoolean("in"+proximity_name+"GPS",false);
+            myVarEditor.commit();
         }
 
         if(notifDisplay) {

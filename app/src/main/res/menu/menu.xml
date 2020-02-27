@@ -9,7 +9,7 @@
         android:id="@+id/action_gps"
         android:icon="@android:drawable/ic_dialog_map"
         android:title="@string/MenuGPS"
-        app:showAsAction="ifRoom"></item>
+        app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_infos"
         android:icon="@android:drawable/ic_dialog_info"
