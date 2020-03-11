@@ -121,50 +121,81 @@ public class Main extends AppCompatActivity {
                 break;
         }
 
-        setPosit(aigNewPosit);
+        setPositAuto(aigNewPosit);
     }
 
-    public void setPosit(String s) { //Fonction to set hand rotation
+    public void setPositAuto(String s){
         try {
             aigPositInt = Integer.parseInt(s);
         } catch(NumberFormatException nfe) {
             Toast.makeText(getBaseContext(), "Valeur position de l'aiguille non sous forme d'entier", Toast.LENGTH_LONG).show();
         }
-        aigImg.setRotation(aigPositInt*40+320);
+        aigImg.setRotation(aigPositInt * 40 + 320);
         SendSMS(s);
+    }
+    public void setPositManuel(String s) { //Fonction to set hand rotation manually
+        try {
+            aigPositInt = Integer.parseInt(s);
+        } catch(NumberFormatException nfe) {
+            Toast.makeText(getBaseContext(), "Valeur position de l'aiguille non sous forme d'entier", Toast.LENGTH_LONG).show();
+        }
+        if (positGps.equals("0000")){
+            aigImg.setRotation(aigPositInt * 40 + 320);
+            SendSMS(s);
+        }else {
+            AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
+            builder.setTitle("Attention vous êtes définis dans une zone GPS !");
+            builder.setMessage("Etes vous sûr de vouloir écraser votre position actuelle ? \n"+
+                    "(Votre position se remettra à jour au prochain déplacement)");
+            builder.setNegativeButton("Non", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            builder.setPositiveButton("Oui", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int id) {
+                    aigImg.setRotation(aigPositInt * 40 + 320);
+                    SendSMS(String.valueOf(aigPositInt));
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
     }
 
 
     //Ensemble des fonctions lors d'un appui sur un des boutons
     public void Famille (View view){
-        setPosit("1");
+        setPositManuel("1");
     }
     public void Travail (View view){
-        setPosit("2");
+        setPositManuel("2");
     }
     public void Voyage (View view){
-        setPosit("3");
+        setPositManuel("3");
     }
     public void Dehors (View view){
-        setPosit("4");
+        setPositManuel("4");
     }
     public void Joker (View view){
-        setPosit("5");
+        setPositManuel("5");
     }
     public void PenseAVous (View view){
-        setPosit("6");
+        setPositManuel("6");
     }
     public void ALaMaison (View view){
-        setPosit("7");
+        setPositManuel("7");
     }
     public void PasDeNouvelles (View view){
-        setPosit("8");
-
+        setPositManuel("8");
     }
     public void VeuxRentrer (View view){
-        setPosit("9");
+        setPositManuel("9");
     }
 
+    //Ensemble des fonctions pour l'envoi des sms
     private void SendSMS(final String x) { //Fonction d'envoi des sms
         if (Integer.parseInt(myVar.getString("aigLastPosit", "1")) != Integer.parseInt(x)) { //Test if last position different than new one
 
@@ -182,7 +213,6 @@ public class Main extends AppCompatActivity {
             sms.sendTextMessage("+36769424262", null, x, sentPI, deliveredPI);
         }
     }//Fonction d'envoi des sms
-
     public class sentReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context arg0, Intent arg1) {
@@ -210,7 +240,6 @@ public class Main extends AppCompatActivity {
             }
         }
     } //Fonction emission sms
-
     public class deliveredReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context arg0, Intent arg1) {
@@ -227,6 +256,7 @@ public class Main extends AppCompatActivity {
         }
     } //Fonction reception sms
 
+    //Fonction annexe
     public static String BooleantoString(boolean b) {
         return b ? "1" : "0";
     }

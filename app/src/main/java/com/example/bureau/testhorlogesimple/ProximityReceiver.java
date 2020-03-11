@@ -29,8 +29,10 @@ public class ProximityReceiver extends BroadcastReceiver {
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     public void onReceive(Context context, Intent intent) {
+        /*
         Intent background = new Intent(context,BackGroundService.class);
         context.startService(background);
+         */
         // TODO Auto-generated method stub
         Log.d("Intent1","Intent received");
         myVar=context.getSharedPreferences(MY_PREF,context.MODE_PRIVATE);
@@ -88,7 +90,6 @@ public class ProximityReceiver extends BroadcastReceiver {
              * If two notifications share same notification id, then the last notification replaces the first notification
              * */
             nManager.notify((int) System.currentTimeMillis(), notification);
-            context.startActivity(new Intent(context,Main.class));
         }
     }
 }

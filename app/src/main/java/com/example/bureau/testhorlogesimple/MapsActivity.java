@@ -12,6 +12,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -30,13 +32,15 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity
+        implements OnMapReadyCallback {
     //Variable preferences
     public static final String MY_PREF="mesPrefs";
     SharedPreferences myVar;
     SharedPreferences.Editor myVarEditor;
 
     //Variable activity
+    private static final String TAG = MapsActivity.class.getSimpleName();
     private GoogleMap mMap;
     LocationManager locationManager;
     PendingIntent pendingIntentLocation;
@@ -70,7 +74,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // Getting index of last location added
         zoneNumGPS = myVar.getInt("zoneNumGPS", 0);
-        // Getting stored zoom level if exists else return 9
+
         // Iterating through all the locations
         for (int i = 0; i < 4; i++) {
             // Getting the latitude of the i-th location
@@ -89,7 +93,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             drawCircle(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)), Integer.parseInt(radiusSize), i, gpsDefine);
         }
 
-        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener(){
             @Override
             public void onMapClick(LatLng point) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
@@ -240,13 +244,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .icon(BitmapDescriptorFactory.defaultMarker(hsv[0])));
         markersArray[i].setVisible(gpsDefine);
     }
-
     private void modifyMarker(LatLng point, Marker marker, String title) {
         marker.setTitle(title);
         marker.setPosition(point);
         marker.setVisible(true);
     }
-
     private void drawCircle(LatLng point, int radiusSize, int i, boolean gpsDefine) {
         TypedArray ta = getResources().obtainTypedArray(R.array.colors);
         int colorToUse = ta.getResourceId(i, 0);
@@ -259,7 +261,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         );
         circlesArray[i].setVisible(gpsDefine);
     }
-
     private void modifyCircle(LatLng point, Circle circle, int radiusSize) {
         circle.setCenter(point);
         circle.setRadius(radiusSize);
@@ -272,7 +273,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void setProximityAlert(LatLng pointing,int radiusSize,int id){
         // This intent will call the activity ProximityActivity
-        Intent proximityIntent = new Intent("com.example.bureau.testhorlogesimple.Proximity_Alert");
+        Intent proximityIntent = new Intent(getApplicationContext(),ProximityReceiver.class);
         proximityIntent.putExtra("name",positionID[id]);
         proximityIntent.putExtra("id",id);
         // Creating a pending intent which will be invoked by LocationManager when the specified region is
@@ -288,7 +289,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
     public void removeProximityAlert(int id){
-        Intent proximityIntent = new Intent("com.example.bureau.testhorlogesimple.Proximity_Alert");
+        Intent proximityIntent = new Intent(getApplicationContext(),ProximityReceiver.class);
         proximityIntent.putExtra("name",positionID[id]);
         proximityIntent.putExtra("id",id);
         pendingIntentLocation = PendingIntent.getBroadcast(getApplicationContext(), id, proximityIntent,PendingIntent.FLAG_CANCEL_CURRENT);
@@ -304,8 +305,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onResume() {
         super.onResume();
     }
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
 
-    public void onPause() {
+   public void onPause() {
         super.onPause();
     }
 }
