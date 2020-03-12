@@ -34,12 +34,12 @@ public class Main extends AppCompatActivity {
     Boolean inMaisonGps;
 
     //Variables Main Activity
-    ImageView aigImg;//Aiguille
-    String aigNewPosit;//Nouvelle position aiguille
-    int aigPositInt;//Position actuelle aiguille
-    String positGps="0000";//String codant si à l'intérieur de Famille/Travail/Joker/Maison
+    ImageView aigImg;//Hand
+    String aigNewPosit;//New Hand position
+    int aigPositInt;//Actual Hand position
+    String positGps="0000";//String coding if gps position inside Famille/Travail/Joker/Maison
     final String[] personID ={"Maman","Papa","Marie","Louis","Camille","Perrine","Mathilde","Défaut"};
-    int[] aigImgID ={R.mipmap.aig_maman,R.mipmap.aig_papa,R.mipmap.aig_marie,R.mipmap.aig_louis,R.mipmap.aig_camille,R.mipmap.aig_perrine,R.mipmap.aig_mathilde,R.mipmap.aig_defaut};//Ensemble images aiguilles personnes
+    int[] aigImgID ={R.mipmap.aig_maman,R.mipmap.aig_papa,R.mipmap.aig_marie,R.mipmap.aig_louis,R.mipmap.aig_camille,R.mipmap.aig_perrine,R.mipmap.aig_mathilde,R.mipmap.aig_defaut};//All Hand mipmap
 
     //Variables sms functions
     BroadcastReceiver sentBroadcast;
@@ -52,13 +52,13 @@ public class Main extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        //Enregistrement emission/reception sms
+        //Register emission/reception sms
         registerReceiver(sentBroadcast, sentIntentFilter);//
         registerReceiver(deliveredBroadcast, deliveredIntentFilter);
     }
     @Override
     protected void onPause() {
-        //Supression enregistrement emission/reception
+        //Delete registration emission/reception sms
         if(deliveredBroadcast!=null) {
             unregisterReceiver(deliveredBroadcast);
             deliveredBroadcast=null;
@@ -74,56 +74,57 @@ public class Main extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Creation emission/reception sms
+        //Creation emission/reception sms functions
         sentIntentFilter=new IntentFilter(SENT);
         deliveredIntentFilter=new IntentFilter(DELIVERED);
         sentBroadcast=new sentReceiver();
         deliveredBroadcast=new deliveredReceiver();
 
+        //Layout
         setContentView(R.layout.activity_main);
 
         //Get preferences inside usable variables
         myVar=getSharedPreferences(MY_PREF,Context.MODE_PRIVATE);
-        myVarEditor = myVar.edit();
+        myVarEditor=myVar.edit();
         aigLastPosit=myVar.getString("aigLastPosit","1");
         inFamilleGps=myVar.getBoolean("inFamilleGPS",false);
         inTravailGps=myVar.getBoolean("inTravailGPS",false);
         inJokerGps=myVar.getBoolean("inJokerGPS",false);
         inMaisonGps=myVar.getBoolean("inMaisonGPS",false);
 
-        //Set aiguille image
+        //Set Hand image
         aigChoosed=myVar.getInt("aigChoosed",8);
         aigImg = findViewById(R.id.Aiguille);
         aigImg.setImageResource(aigImgID[aigChoosed-1]);
 
-        //Verification gps information and hand positionning
+        //Check gps information and hand positioning
         positGps = BooleantoString(inFamilleGps)+BooleantoString(inTravailGps)+BooleantoString(inJokerGps)+BooleantoString(inMaisonGps);
         switch (positGps){
-            case "0000":
+            case "0000": //Not inside any Geofence
                 aigNewPosit="4";
                 break;
-            case "1000":
+            case "1000": //Inside Family Geofence
                 aigNewPosit="1";
                 break;
-            case "0100":
-            case "1100":
+            case "0100": //Inside Travail Geofence
+            case "1100": //Inside Family and Travail Geofence
                 aigNewPosit="2";
                 break;
-            case "0010":
+            case "0010": //Inside Joker Geofence
                 aigNewPosit="5";
                 break;
-            case "0001":
+            case "0001": //Inside Maison Geofence
                 aigNewPosit="7";
                 break;
             default:
-                aigNewPosit=aigLastPosit;
+                aigNewPosit=aigLastPosit; //If none of above possibility = ERROR
                 Toast.makeText(getBaseContext(), "Configuration des zones non pris en charge. Veuillez vérifier la disposition des zones GPS.", Toast.LENGTH_LONG).show();
                 break;
         }
-
         setPositAuto(aigNewPosit);
     }
 
+    //Hand positioning by code
     public void setPositAuto(String s){
         try {
             aigPositInt = Integer.parseInt(s);
@@ -133,20 +134,21 @@ public class Main extends AppCompatActivity {
         aigImg.setRotation(aigPositInt * 40 + 320);
         SendSMS(s);
     }
-    public void setPositManuel(String s) { //Fonction to set hand rotation manually
+    //Hand positioning by user choice
+    public void setPositManuel(String s) {
         try {
             aigPositInt = Integer.parseInt(s);
         } catch(NumberFormatException nfe) {
             Toast.makeText(getBaseContext(), "Valeur position de l'aiguille non sous forme d'entier", Toast.LENGTH_LONG).show();
         }
-        if (positGps.equals("0000")){
+        if (positGps.equals("0000")){//If not inside any geofence
             aigImg.setRotation(aigPositInt * 40 + 320);
             SendSMS(s);
         }else {
             AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
             builder.setTitle("Attention vous êtes définis dans une zone GPS !");
             builder.setMessage("Etes vous sûr de vouloir écraser votre position actuelle ? \n"+
-                    "(Votre position se remettra à jour au prochain déplacement)");
+                    "(Votre position se remettra à jour au prochain franchissement)");
             builder.setNegativeButton("Non", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
@@ -166,7 +168,7 @@ public class Main extends AppCompatActivity {
     }
 
 
-    //Ensemble des fonctions lors d'un appui sur un des boutons
+    //All buttons function
     public void Famille (View view){
         setPositManuel("1");
     }
@@ -195,9 +197,11 @@ public class Main extends AppCompatActivity {
         setPositManuel("9");
     }
 
-    //Ensemble des fonctions pour l'envoi des sms
-    private void SendSMS(final String x) { //Fonction d'envoi des sms
-        if (Integer.parseInt(myVar.getString("aigLastPosit", "1")) != Integer.parseInt(x)) { //Test if last position different than new one
+    //Sms functions
+    //Function to send an sms
+    private void SendSMS(final String x) {
+        //Test if last position different than new one
+        if (Integer.parseInt(myVar.getString("aigLastPosit", "1")) != Integer.parseInt(x)) {
 
             PendingIntent sentPI = PendingIntent.getBroadcast(this, 0,
                     new Intent(SENT), 0);
@@ -212,7 +216,8 @@ public class Main extends AppCompatActivity {
             android.telephony.SmsManager sms = android.telephony.SmsManager.getDefault();
             sms.sendTextMessage("+36769424262", null, x, sentPI, deliveredPI);
         }
-    }//Fonction d'envoi des sms
+    }
+    //Sms sending receiver and Error handling
     public class sentReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context arg0, Intent arg1) {
@@ -239,7 +244,8 @@ public class Main extends AppCompatActivity {
                     break;
             }
         }
-    } //Fonction emission sms
+    }
+    //Sms delivered receiver and Error handling
     public class deliveredReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context arg0, Intent arg1) {
@@ -254,15 +260,15 @@ public class Main extends AppCompatActivity {
                     break;
             }
         }
-    } //Fonction reception sms
+    }
 
-    //Fonction annexe
+    //Function to transform Boolean to String 1 or 0
     public static String BooleantoString(boolean b) {
         return b ? "1" : "0";
     }
 
 
-    //Fonctions de menu
+    //Menu Functions
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -272,7 +278,7 @@ public class Main extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
-        //Set the notifications menu item checked corresponding to preferences
+        //Set the notifications menu item checked corresponding to registered preferences
         menu.findItem(R.id.action_bar_notifs).setChecked(myVar.getBoolean("notifsEnable",true));
         return true;
     }
@@ -286,7 +292,7 @@ public class Main extends AppCompatActivity {
             case R.id.action_infos: //Pop-up d'informations
                 Toast.makeText(getBaseContext(), "Créé par Louis Le Nézet", Toast.LENGTH_SHORT).show();
                 return true;
-            case R.id.action_bar_notifs: //Autorisation ou non des notifications GPS
+            case R.id.action_bar_notifs: //Gps notifications permission
                 if(item.isChecked()){
                     Toast.makeText(getBaseContext(), "Notifications désactivées", Toast.LENGTH_SHORT).show();
                     item.setChecked(false);
@@ -298,7 +304,7 @@ public class Main extends AppCompatActivity {
                 }
                 myVarEditor.commit();
                 return true;
-            case R.id.action_aiguille: //Choix de l'aiguille a afficher
+            case R.id.action_aiguille: //Hand Choice
                 AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
                 builder.setTitle("Choisissez l'aiguille à afficher:");
                 builder.setSingleChoiceItems(personID, myVar.getInt("aigChoosed",8)-1, new DialogInterface.OnClickListener() {
@@ -316,7 +322,7 @@ public class Main extends AppCompatActivity {
                         // Change hand preference from sharedPreference
                         myVarEditor.putInt("aigChoosed",aigChoosed);
                         // Committing the changes
-                        myVarEditor.commit();
+                        myVarEditor.apply();
                         // Restart activity
                         recreate();
                     }

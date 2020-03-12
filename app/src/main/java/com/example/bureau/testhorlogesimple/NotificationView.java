@@ -9,7 +9,7 @@ public class NotificationView extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.notification);
 
-        TextView notif = (TextView) findViewById(R.id.notification);
+        TextView notif = findViewById(R.id.notification);
         Bundle data = getIntent().getExtras();
         notif.setText(data.getString("content"));
     }

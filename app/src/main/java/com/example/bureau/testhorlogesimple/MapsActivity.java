@@ -28,6 +28,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
@@ -57,25 +58,24 @@ public class MapsActivity extends FragmentActivity
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         OnMapReadyCallback,
-        GoogleMap.OnMapClickListener,
-        GoogleMap.OnMarkerClickListener,
         LocationListener {
 
-    //Variable preferences
+    //Preferences
     public static final String MY_PREF="mesPrefs";
     SharedPreferences myVar;
     SharedPreferences.Editor myVarEditor;
     int zoneNumGPS = 4;
-    final String[] positionID = {"Famille", "Travail", "Joker", "A la maison"};
+    final String[] positionID = {"Famille", "Travail", "Joker", "Maison"};
     String lat="";
     String lng = "";
     String radiusSize = "";
     String title = "";
     Boolean gpsDefine = false;
 
-    //Variable activity
+    //Activity variables
     private static final String TAG = MapsActivity.class.getSimpleName();
     Context appContext;
+
     //Map variable
     private TextView textLat, textLong;
     private GoogleMap mMap;
@@ -92,35 +92,29 @@ public class MapsActivity extends FragmentActivity
     //Geofencing API
     private GoogleApiClient googleApiClient;
     private GeofencingClient geofencingClient;
-    ArrayList<Geofence> geofenceList= new ArrayList<Geofence>(4);
+    ArrayList<Geofence> geofenceList= new ArrayList<>(4);
     PendingIntent geofencePendingIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         appContext=getApplicationContext();
-        setContentView(R.layout.activity_maps);
+
+        //Preferences
         myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
-        myVarEditor = myVar.edit();
-        textLat = (TextView) findViewById(R.id.Lat);
-        textLong = (TextView) findViewById(R.id.Long);
+        myVarEditor=myVar.edit();
+
+        //Layout
+        setContentView(R.layout.activity_maps);
+        textLat = findViewById(R.id.Lat);
+        textLong = findViewById(R.id.Long);
         SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        createGoogleApi();
-        geofencingClient = LocationServices.getGeofencingClient(appContext);
-    }
 
-    // Create GoogleApiClient instance
-    private void createGoogleApi() {
-        Log.d(TAG, "createGoogleApi()");
-        if ( googleApiClient == null ) {
-            googleApiClient = new GoogleApiClient.Builder( appContext )
-                    .addConnectionCallbacks( this )
-                    .addOnConnectionFailedListener( this )
-                    .addApi( LocationServices.API )
-                    .build();
-        }
+        //Location
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        geofencingClient = LocationServices.getGeofencingClient(appContext);
+        createGoogleApi();
     }
 
     @Override
@@ -129,27 +123,30 @@ public class MapsActivity extends FragmentActivity
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(48, -2.4), 9));
 
-        // Getting index of last location added
+        //Getting index of last location added
         zoneNumGPS = myVar.getInt("zoneNumGPS", 0);
 
-        // Iterating through all the locations
+        //Iterating through all the locations to create circles and markers
         for (int i = 0; i < 4; i++) {
-            // Getting the latitude of the i-th location
+            //Getting the latitude of the i-th location
             lat = myVar.getString("lat" + positionID[i], "0");
-            // Getting the longitude of the i-th location
+            //Getting the longitude of the i-th location
             lng = myVar.getString("lng" + positionID[i], "0");
-            // Getting the radius size of the i-th location
+            //Getting the radius size of the i-th location
             radiusSize = myVar.getString("radiusSize" + positionID[i], "100");
             // Getting the title of the i-th location
             title = myVar.getString("title" + positionID[i], "Null");
-            // Getting if the i-th location is define
+            //Getting if the i-th location is define
             gpsDefine = myVar.getBoolean("gpsDefine" + positionID[i], false);
-            // Creating Markers
+            //Creating Markers
             drawMarker(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)), title, i, gpsDefine);
-            // Drawing circle on the map
+            //Drawing circle on the map
             drawCircle(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)), Integer.parseInt(radiusSize), i, gpsDefine);
         }
 
+        //When Map is clicked
+        //region MapShortClick
+        //Creation or Updating Geofence
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener(){
             @Override
             public void onMapClick(LatLng point) {
@@ -167,16 +164,17 @@ public class MapsActivity extends FragmentActivity
                         // Get location selected
                         zoneNumGPS = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
 
+                        //Radius Size Alert dialog
                         final AlertDialog.Builder seekBarDialog = new AlertDialog.Builder(MapsActivity.this);
                         final LayoutInflater inflater = (LayoutInflater) MapsActivity.this.getSystemService(LAYOUT_INFLATER_SERVICE);
                         final View ViewLayout = inflater.inflate(R.layout.seek_bar_dialog, (ViewGroup) findViewById(R.id.layout_dialog));
                         seekBarDialog.setView(ViewLayout);
+
+                        //Parameters of the seekBar
                         seekBarDialog.setTitle("Sélectionner le rayon de la zone :");
-
                         final int[] radiusSize = new int[1];
-
-                        final TextView txtView = (TextView) ViewLayout.findViewById(R.id.txtItem);
-                        SeekBar seek = (SeekBar) ViewLayout.findViewById(R.id.seekBar);
+                        final TextView txtView = ViewLayout.findViewById(R.id.txtItem);
+                        SeekBar seek = ViewLayout.findViewById(R.id.seekBar);
                         seek.setMax(1000);
                         seek.setProgress(500);
                         radiusSize[0] = 200;
@@ -199,7 +197,7 @@ public class MapsActivity extends FragmentActivity
                             }
                         });
 
-                        // Button OK
+                        // When Radius size is selected
                         seekBarDialog.setPositiveButton("OK",
                                 new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int which) {
@@ -228,13 +226,13 @@ public class MapsActivity extends FragmentActivity
                                         myVarEditor.commit();
                                         Toast.makeText(getBaseContext(), "Proximity Alert is added", Toast.LENGTH_SHORT).show();
                                     }
-
                                 });
                         seekBarDialog.create();
                         seekBarDialog.show();
 
                     }
                 });
+                //Negative button for geofence creation
                 builder.setNegativeButton("Annuler", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -245,7 +243,10 @@ public class MapsActivity extends FragmentActivity
                 dialog.show();
             }
         });
+        //endregion
 
+        //region MapLongClick
+        //Geofence deletion
         mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
             @Override
             public void onMapLongClick(LatLng point) {
@@ -276,6 +277,7 @@ public class MapsActivity extends FragmentActivity
                         Toast.makeText(getBaseContext(), "Proximity Alert is removed", Toast.LENGTH_LONG).show();
                     }
                 });
+                //Abandon deletion
                 builder.setNegativeButton("Annuler", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -286,6 +288,7 @@ public class MapsActivity extends FragmentActivity
                 dialog.show();
             }
         });
+        //endregion
     }
 
     //Circles and Marker edition functions
@@ -323,15 +326,16 @@ public class MapsActivity extends FragmentActivity
         circle.setVisible(true);
     }
 
-    //Geofences edition function
+    //Geofence edition function
     private void setGeofence(LatLng point, int radius,int id){
+        //Modify Geofence inside the list
         geofenceList.add(0,new Geofence.Builder()
                 .setRequestId(String.valueOf(id))
                 .setCircularRegion(point.latitude,point.longitude,radius)
                 .setExpirationDuration(NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER|Geofence.GEOFENCE_TRANSITION_EXIT)
                 .build());
-
+        //Add the geofence receiver
         geofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent(id))
                 .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                     @Override
@@ -346,6 +350,7 @@ public class MapsActivity extends FragmentActivity
                     }
                 });
     }
+    //Geofence pending intent deletion
     private void removeGeofence(int id){
         geofencingClient.removeGeofences(getGeofencePendingIntent(id))
                 .addOnSuccessListener(this, new OnSuccessListener<Void>() {
@@ -380,7 +385,17 @@ public class MapsActivity extends FragmentActivity
         return geofencePendingIntent;
     }
 
-
+    // Create GoogleApiClient instance
+    private void createGoogleApi() {
+        Log.d(TAG, "createGoogleApi()");
+        if ( googleApiClient == null ) {
+            googleApiClient = new GoogleApiClient.Builder( appContext )
+                    .addConnectionCallbacks( this )
+                    .addOnConnectionFailedListener( this )
+                    .addApi( LocationServices.API )
+                    .build();
+        }
+    }
     // GoogleApiClient.ConnectionCallbacks connected
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -397,6 +412,7 @@ public class MapsActivity extends FragmentActivity
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.w(TAG, "onConnectionFailed()");
     }
+
 
     //Change in location functions
     @Override
@@ -444,6 +460,7 @@ public class MapsActivity extends FragmentActivity
         writeActualLocation(lastLocation);
     }
 
+
     //Permissions
     // Verify user's response of the permission requested
     @Override
@@ -483,18 +500,6 @@ public class MapsActivity extends FragmentActivity
     // App cannot work without the permissions
     private void permissionsDenied() {
         Log.w(TAG, "permissionsDenied()");
-    }
-
-    // Callback called when Map is touched
-    @Override
-    public void onMapClick(LatLng latLng) {
-        Log.d(TAG, "onMapClick("+latLng +")");
-    }
-    // Callback called when Marker is touched
-    @Override
-    public boolean onMarkerClick(Marker marker) {
-        Log.d(TAG, "onMarkerClickListener: " + marker.getPosition() );
-        return false;
     }
 
     //Get back functions

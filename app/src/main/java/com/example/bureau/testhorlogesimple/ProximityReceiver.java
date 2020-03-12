@@ -13,19 +13,16 @@ import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
-
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofenceStatusCodes;
 import com.google.android.gms.location.GeofencingEvent;
-
 import java.util.List;
-
 import static android.content.ContentValues.TAG;
 
 
 public class ProximityReceiver extends BroadcastReceiver {
     public static final String MY_PREF="mesPrefs";
-    final String[] positionID = {"Famille", "Travail", "Joker", "A la maison"};
+    final String[] positionID = {"Famille", "Travail", "Joker", "Maison"};
     SharedPreferences myVar;
     SharedPreferences.Editor myVarEditor;
     String notificationTitle;
@@ -35,10 +32,6 @@ public class ProximityReceiver extends BroadcastReceiver {
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     @Override
     public void onReceive(Context context, Intent intent) {
-        /*
-        Intent background = new Intent(context,BackGroundService.class);
-        context.startService(background);
-         */
         // TODO Auto-generated method stub
         Log.d("Intent1","Intent received");
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
@@ -48,9 +41,9 @@ public class ProximityReceiver extends BroadcastReceiver {
             return;
         }
 
-        // Get the transition type.
+        //Get the transition type.
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
-
+        //Get the preferences registered
         myVar=context.getSharedPreferences(MY_PREF,context.MODE_PRIVATE);
         myVarEditor = myVar.edit();
         Boolean notifDisplay=myVar.getBoolean("notifsEnable",true);
@@ -70,31 +63,31 @@ public class ProximityReceiver extends BroadcastReceiver {
                 notificationContent = proximity_name;
                 tickerMessage = proximity_name;
                 myVarEditor.putBoolean("in" + proximity_name + "GPS", true);
-                myVarEditor.commit();
+                myVarEditor.apply();
             } else {
                 Toast.makeText(context, "Exiting the region", Toast.LENGTH_LONG).show();
                 notificationTitle = "Proximity - Exit";
                 notificationContent = proximity_name;
                 tickerMessage = proximity_name;
                 myVarEditor.putBoolean("in" + proximity_name + "GPS", false);
-                myVarEditor.commit();
+                myVarEditor.apply();
             }
 
+            //Show notification if permitted
             if (notifDisplay) {
-                Intent notificationIntent = null;
-                notificationIntent = new Intent(context, com.example.bureau.testhorlogesimple.NotificationView.class);
+                Intent notificationIntent = new Intent(context, com.example.bureau.testhorlogesimple.NotificationView.class);
                 notificationIntent.putExtra("content", notificationContent);
 
-                /** This is needed to make this intent different from its previous intents */
+                // This is needed to make this intent different from its previous intents
                 notificationIntent.setData(Uri.parse("tel:/" + (int) System.currentTimeMillis()));
 
-                /** Creating different tasks for each notification. See the flag Intent.FLAG_ACTIVITY_NEW_TASK */
+                // Creating different tasks for each notification. See the flag Intent.FLAG_ACTIVITY_NEW_TASK
                 PendingIntent pendingIntentNotif = PendingIntent.getActivity(context.getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-                /** Getting the System service NotificationManager */
+                // Getting the System service NotificationManager
                 NotificationManager nManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-                /** Configuring notification builder to create a notification */
+                //Configuring notification builder to create a notification
                 NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                         .setWhen(System.currentTimeMillis())
                         .setContentText(notificationContent)
@@ -104,15 +97,16 @@ public class ProximityReceiver extends BroadcastReceiver {
                         .setTicker(tickerMessage)
                         .setContentIntent(pendingIntentNotif);
 
-                /** Creating a notification from the notification builder */
+                //Creating a notification from the notification builder
                 Notification notification = notificationBuilder.build();
 
-                /** Sending the notification to system.
-                 * The first argument ensures that each notification is having a unique id
-                 * If two notifications share same notification id, then the last notification replaces the first notification
-                 * */
+                /* Sending the notification to system.
+                 The first argument ensures that each notification is having a unique id
+                 If two notifications share same notification id, then the last notification replaces the first notification
+                 */
                 nManager.notify((int) System.currentTimeMillis(), notification);
             }
+            context.startActivity(new Intent(context,Main.class));
         }
     }
 }
