@@ -26,4 +26,28 @@
         android:background="?attr/homeAsUpIndicator"
         android:onClick="getBack" />
 
+    <TextView
+        android:id="@+id/Lat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="20dp"
+        android:text="@string/Latitude" />
+
+    <TextView
+        android:id="@+id/Long"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/Lat"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="21dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="11dp"
+        android:text="@string/Longitude" />
+
 </RelativeLayout>
