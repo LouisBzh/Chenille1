@@ -1,5 +1,6 @@
 package com.example.bureau.testhorlogesimple;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
@@ -9,9 +10,14 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.SmsManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -22,6 +28,7 @@ import android.widget.Toast;
 public class Main extends AppCompatActivity {
     //Variables preferences
     public static final String MY_PREF="mesPrefs";
+    public static final int RequestCode_SEND_SMS=1;
     SharedPreferences myVar;
     SharedPreferences.Editor myVarEditor;
     int aigChoosed;
@@ -34,6 +41,7 @@ public class Main extends AppCompatActivity {
     Boolean inMaisonGps;
 
     //Variables Main Activity
+    private static final String TAG = Main.class.getSimpleName();
     ImageView aigImg;//Hand
     String aigNewPosit;//New Hand position
     int aigPositInt;//Actual Hand position
@@ -52,9 +60,12 @@ public class Main extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        //Check Permission
+        checkPermission();
         //Register emission/reception sms
         registerReceiver(sentBroadcast, sentIntentFilter);//
         registerReceiver(deliveredBroadcast, deliveredIntentFilter);
+
     }
     @Override
     protected void onPause() {
@@ -69,8 +80,6 @@ public class Main extends AppCompatActivity {
         }
         super.onPause();
     }
-
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,7 +132,6 @@ public class Main extends AppCompatActivity {
         }
         setPositAuto(aigNewPosit);
     }
-
     //Hand positioning by code
     public void setPositAuto(String s){
         try {
@@ -211,10 +219,10 @@ public class Main extends AppCompatActivity {
 
             // Storing the position
             myVarEditor.putString("aigLastPosit", x);
-            myVarEditor.commit();
+            myVarEditor.apply();
             //---when the SMS has been sent--
             android.telephony.SmsManager sms = android.telephony.SmsManager.getDefault();
-            sms.sendTextMessage("+36769424262", null, x, sentPI, deliveredPI);
+            sms.sendTextMessage("+33769424262", null, x, sentPI, deliveredPI);
         }
     }
     //Sms sending receiver and Error handling
@@ -343,6 +351,84 @@ public class Main extends AppCompatActivity {
     @Override
     protected void onDestroy(){
          super.onDestroy();
+    }
+
+    // Check for permission to access Location
+    private void checkPermission() {
+        Log.d(TAG, "checkPermission()");
+        if (!(ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+                == PackageManager.PERMISSION_GRANTED )){
+
+                Log.d(TAG, "askPermission()");
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.SEND_SMS}, RequestCode_SEND_SMS);
+        }
+    }
+    // Verify user's response of the permission requested
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Log.d(TAG, "onRequestPermissionsResult()");
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch ( requestCode ) {
+            case RequestCode_SEND_SMS: {
+                if ( grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED ){
+                    // Permission granted continue activity
+                } else {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(Main.this, Manifest.permission.SEND_SMS)) {
+                        //Show permission explanation dialog...
+                        permissionsDenied();
+                    }else{
+                        //Never ask again selected, or device policy prohibits the app from having that permission.
+                        //So, disable that feature, or fall back to another situation...
+                        permissionsDeniedForever();
+                    }
+                }
+                break;
+            }
+        }
+    }
+    // App cannot work without the permissions
+    private void permissionsDenied() {
+        Log.w(TAG, "permissionsDenied()");
+        AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
+        builder.setTitle("Permissions nécessaires");
+        builder.setMessage("L'envoi de sms est nécessaire afin de pouvoir communiquer avec l'horloge." +
+                "Etes-vous sûr de ne pas autoriser l'application ?"+
+                "(L'application se fermera !)");
+        builder.setPositiveButton("Rien à foutre !", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                finish();
+            }
+        });
+        builder.setNegativeButton("Oups, désolé !", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                checkPermission();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    private void permissionsDeniedForever() {
+        Log.w(TAG, "permissionsDenied()");
+        AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
+        builder.setTitle("Permissions nécessaires");
+        builder.setMessage("L'envoi de sms est nécessaire afin de pouvoir communiquer avec l'horloge." +
+                "Veuillez autoriser son utilisation dans les autorisations systèmes de l'application si vous voulez utiliser cette application! ");
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                finish();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+    public void onBackPressed() {
+        finish();
     }
 
 }

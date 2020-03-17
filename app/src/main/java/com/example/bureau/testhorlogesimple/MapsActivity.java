@@ -28,7 +28,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
@@ -75,6 +74,7 @@ public class MapsActivity extends FragmentActivity
     //Activity variables
     private static final String TAG = MapsActivity.class.getSimpleName();
     Context appContext;
+    public static final int RequestCode_GPS_FINE=2;
 
     //Map variable
     private TextView textLat, textLong;
@@ -98,23 +98,28 @@ public class MapsActivity extends FragmentActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        appContext=getApplicationContext();
-
         //Preferences
         myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
-        myVarEditor=myVar.edit();
+        myVarEditor = myVar.edit();
+        if(checkPermission()) {
+            appContext = getApplicationContext();
 
-        //Layout
-        setContentView(R.layout.activity_maps);
-        textLat = findViewById(R.id.Lat);
-        textLong = findViewById(R.id.Long);
-        SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFrag.getMapAsync(this);
+            //Layout
+            setContentView(R.layout.activity_maps);
+            textLat = findViewById(R.id.Lat);
+            textLong = findViewById(R.id.Long);
+            SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            mapFrag.getMapAsync(this);
 
-        //Location
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        geofencingClient = LocationServices.getGeofencingClient(appContext);
-        createGoogleApi();
+            //Location
+            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            geofencingClient = LocationServices.getGeofencingClient(appContext);
+            createGoogleApi();
+            // Call GoogleApiClient connection when starting the Activity
+            googleApiClient.connect();
+        }else{
+            askPermission();
+        }
     }
 
     @Override
@@ -413,7 +418,6 @@ public class MapsActivity extends FragmentActivity
         Log.w(TAG, "onConnectionFailed()");
     }
 
-
     //Change in location functions
     @Override
     public void onLocationChanged(Location location) {
@@ -437,7 +441,6 @@ public class MapsActivity extends FragmentActivity
                 startLocationUpdates();
             }
         }
-        else askPermission();
     }
     // Start location Updates
     private void startLocationUpdates(){
@@ -462,46 +465,92 @@ public class MapsActivity extends FragmentActivity
 
 
     //Permissions
+    // Check for permission to access Location
+    private boolean checkPermission() {
+        Log.d(TAG, "checkPermission()");
+        return (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED );
+    }
+    //Ask ACCESS_FINE_LOCATION
+    private void askPermission(){
+        // Ask for permission if it wasn't granted yet
+        if(!(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED)){
+            Log.d(TAG, "askPermission()");
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[] { Manifest.permission.ACCESS_FINE_LOCATION },RequestCode_GPS_FINE);
+        }
+    }
     // Verify user's response of the permission requested
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult()");
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch ( requestCode ) {
-            case 1: {
+            case RequestCode_GPS_FINE: {
                 if ( grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED ){
                     // Permission granted
-                    getLastKnownLocation();
-
+                    myVarEditor.putBoolean("GPS_Permit",true);
+                    myVarEditor.apply();
+                    recreate();
                 } else {
-                    // Permission denied
-                    permissionsDenied();
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(MapsActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                        //Show permission explanation dialog...
+                        permissionsDenied();
+                    }else{
+                        //Never ask again selected, or device policy prohibits the app from having that permission.
+                        //So, disable that feature, or fall back to another situation...
+                        permissionsDeniedForever();
+                    }
                 }
                 break;
             }
         }
     }
-    // Check for permission to access Location
-    private boolean checkPermission() {
-        Log.d(TAG, "checkPermission()");
-        // Ask for permission if it wasn't granted yet
-        return (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED );
-    }
-    // Asks for permission
-    private void askPermission() {
-        Log.d(TAG, "askPermission()");
-        ActivityCompat.requestPermissions(
-                this,
-                new String[] { Manifest.permission.ACCESS_FINE_LOCATION },1
-        );
-    }
     // App cannot work without the permissions
     private void permissionsDenied() {
         Log.w(TAG, "permissionsDenied()");
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        builder.setTitle("Permissions nécessaires");
+        builder.setMessage("Le GPS est nécessaire à l'utilisation de cette fonctionnalité." +
+                "Etes-vous sûr de ne pas autoriser l'application à l'utiliser ?"+
+                "(Cette fonctionnalité ne sera donc pas utilisée)");
+        builder.setPositiveButton("Rien à foutre !", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                myVarEditor.putBoolean("GPS_Permit",false);
+                myVarEditor.apply();
+                startActivity(new Intent(MapsActivity.this, Main.class));
+            }
+        });
+        builder.setNegativeButton("Bon, d'accord !", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                askPermission();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
-
+    private void permissionsDeniedForever() {
+        Log.w(TAG, "permissionsDenied()");
+        myVarEditor.putBoolean("GPS_Permit",false);
+        myVarEditor.apply();
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        builder.setTitle("Permissions nécessaires");
+        builder.setMessage("Le GPS est nécessaire à l'utilisation de cette fonctionnalité." +
+                "Veuillez autoriser son utilisation dans les autorisations systèmes de l'application si vous voulez utiliser cette fonctionnalité! ");
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                startActivity(new Intent(MapsActivity.this, Main.class));
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
     //Get back functions
     @Override
     public void onBackPressed() {
@@ -515,12 +564,6 @@ public class MapsActivity extends FragmentActivity
     @Override
     protected void onStart() {
         super.onStart();
-        if(!checkPermission()){
-            askPermission();
-        }else {
-            // Call GoogleApiClient connection when starting the Activity
-            googleApiClient.connect();
-        }
     }
     @Override
     protected void onStop() {
