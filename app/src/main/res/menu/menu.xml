@@ -19,10 +19,14 @@
         android:id="@+id/action_bar_notifs"
         android:actionLayout="@layout/switch_item"
         android:checkable="true"
-        android:title="@string/MenuNotif"
+        android:title="@string/MenuNotif" />
+    <item
+        android:id="@+id/action_bar_GPS"
+        android:actionLayout="@layout/switch_item"
+        android:checkable="true"
+        android:title="@string/MenuGPS"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_aiguille"
-        android:title="@string/MenuAiguille"
-        app:showAsAction="ifRoom" />
+        android:title="@string/MenuAiguille" />
 </menu>

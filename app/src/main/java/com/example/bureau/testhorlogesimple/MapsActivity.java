@@ -67,7 +67,7 @@ public class MapsActivity extends FragmentActivity
     final String[] positionID = {"Famille", "Travail", "Joker", "Maison"};
     String lat="";
     String lng = "";
-    String radiusSize = "";
+    Integer radiusSize;
     String title = "";
     Boolean gpsDefine = false;
 
@@ -92,7 +92,7 @@ public class MapsActivity extends FragmentActivity
     //Geofencing API
     private GoogleApiClient googleApiClient;
     private GeofencingClient geofencingClient;
-    ArrayList<Geofence> geofenceList= new ArrayList<>(4);
+    ArrayList<Geofence> geofenceList= new ArrayList<>(1);
     PendingIntent geofencePendingIntent;
 
     @Override
@@ -102,21 +102,26 @@ public class MapsActivity extends FragmentActivity
         myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
         myVarEditor = myVar.edit();
         if(checkPermission()) {
-            appContext = getApplicationContext();
+            if(myVar.getBoolean("GpsEnable",false)) {
+                appContext = getApplicationContext();
 
-            //Layout
-            setContentView(R.layout.activity_maps);
-            textLat = findViewById(R.id.Lat);
-            textLong = findViewById(R.id.Long);
-            SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-            mapFrag.getMapAsync(this);
+                //Layout
+                setContentView(R.layout.activity_maps);
+                textLat = findViewById(R.id.Lat);
+                textLong = findViewById(R.id.Long);
+                SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+                mapFrag.getMapAsync(this);
 
-            //Location
-            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            geofencingClient = LocationServices.getGeofencingClient(appContext);
-            createGoogleApi();
-            // Call GoogleApiClient connection when starting the Activity
-            googleApiClient.connect();
+                //Location
+                locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                geofencingClient = LocationServices.getGeofencingClient(appContext);
+                createGoogleApi();
+                // Call GoogleApiClient connection when starting the Activity
+                googleApiClient.connect();
+            }else{
+                Toast.makeText(getBaseContext(),"GPS non activé",Toast.LENGTH_LONG).show();
+                startActivity(new Intent(MapsActivity.this, Main.class));
+            }
         }else{
             askPermission();
         }
@@ -138,7 +143,7 @@ public class MapsActivity extends FragmentActivity
             //Getting the longitude of the i-th location
             lng = myVar.getString("lng" + positionID[i], "0");
             //Getting the radius size of the i-th location
-            radiusSize = myVar.getString("radiusSize" + positionID[i], "100");
+            radiusSize = myVar.getInt("radiusSize" + positionID[i], 1000);
             // Getting the title of the i-th location
             title = myVar.getString("title" + positionID[i], "Null");
             //Getting if the i-th location is define
@@ -146,7 +151,7 @@ public class MapsActivity extends FragmentActivity
             //Creating Markers
             drawMarker(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)), title, i, gpsDefine);
             //Drawing circle on the map
-            drawCircle(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)), Integer.parseInt(radiusSize), i, gpsDefine);
+            drawCircle(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)), radiusSize, i, gpsDefine);
         }
 
         //When Map is clicked
@@ -218,11 +223,9 @@ public class MapsActivity extends FragmentActivity
                                         // Storing the longitude for the i-th location
                                         myVarEditor.putString("lng" + positionID[zoneNumGPS], Double.toString(pointing.longitude));
                                         // Storing the radius size for the i-th location
-                                        myVarEditor.putString("radiusSize" + positionID[zoneNumGPS], Integer.toString(radiusSize[0]));
+                                        myVarEditor.putInt("radiusSize" + positionID[zoneNumGPS], radiusSize[0]);
                                         // Storing index of the last locations
                                         myVarEditor.putInt("locationNum", zoneNumGPS);
-                                        // Storing the zoom level to the shared preferences
-                                        myVarEditor.putString("zoom" + positionID[zoneNumGPS], Float.toString(mMap.getCameraPosition().zoom));
                                         // Storing the name to the shared preferences
                                         myVarEditor.putString("title" + positionID[zoneNumGPS], positionID[zoneNumGPS]);
                                         // Confirming GPS definition to the shared preferences
@@ -492,7 +495,7 @@ public class MapsActivity extends FragmentActivity
                 if ( grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED ){
                     // Permission granted
-                    myVarEditor.putBoolean("GPS_Permit",true);
+                    myVarEditor.putBoolean("GpsEnable",true);
                     myVarEditor.apply();
                     recreate();
                 } else {
@@ -514,13 +517,13 @@ public class MapsActivity extends FragmentActivity
         Log.w(TAG, "permissionsDenied()");
         AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
         builder.setTitle("Permissions nécessaires");
-        builder.setMessage("Le GPS est nécessaire à l'utilisation de cette fonctionnalité." +
-                "Etes-vous sûr de ne pas autoriser l'application à l'utiliser ?"+
+        builder.setMessage("Le GPS est nécessaire à l'utilisation de cette fonctionnalité.\n" +
+                "Etes-vous sûr de ne pas autoriser l'application à l'utiliser ?\n"+
                 "(Cette fonctionnalité ne sera donc pas utilisée)");
         builder.setPositiveButton("Rien à foutre !", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-                myVarEditor.putBoolean("GPS_Permit",false);
+                myVarEditor.putBoolean("GpsEnable",false);
                 myVarEditor.apply();
                 startActivity(new Intent(MapsActivity.this, Main.class));
             }
@@ -536,11 +539,11 @@ public class MapsActivity extends FragmentActivity
     }
     private void permissionsDeniedForever() {
         Log.w(TAG, "permissionsDenied()");
-        myVarEditor.putBoolean("GPS_Permit",false);
+        myVarEditor.putBoolean("GpsEnable",false);
         myVarEditor.apply();
         AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
         builder.setTitle("Permissions nécessaires");
-        builder.setMessage("Le GPS est nécessaire à l'utilisation de cette fonctionnalité." +
+        builder.setMessage("Le GPS est nécessaire à l'utilisation de cette fonctionnalité.\n" +
                 "Veuillez autoriser son utilisation dans les autorisations systèmes de l'application si vous voulez utiliser cette fonctionnalité! ");
         builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override

@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -24,6 +25,18 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingClient;
+import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+
+import java.util.ArrayList;
+
+import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
 
 public class Main extends AppCompatActivity {
     //Variables preferences
@@ -39,9 +52,14 @@ public class Main extends AppCompatActivity {
     Boolean inTravailGps;
     Boolean inJokerGps;
     Boolean inMaisonGps;
+    private GeofencingClient geofencingClient;
+    PendingIntent geofencePendingIntent;
+    ArrayList<Geofence> geofenceList= new ArrayList<>(1);
+    final String[] positionID = {"Famille", "Travail", "Joker", "Maison"};
 
     //Variables Main Activity
     private static final String TAG = Main.class.getSimpleName();
+    Context appContext;
     ImageView aigImg;//Hand
     String aigNewPosit;//New Hand position
     int aigPositInt;//Actual Hand position
@@ -60,15 +78,15 @@ public class Main extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        //Check Permission
-        checkPermission();
-        //Register emission/reception sms
-        registerReceiver(sentBroadcast, sentIntentFilter);//
-        registerReceiver(deliveredBroadcast, deliveredIntentFilter);
-
     }
     @Override
-    protected void onPause() {
+    protected void onRestart() {
+        super.onRestart();
+        recreate();
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
         //Delete registration emission/reception sms
         if(deliveredBroadcast!=null) {
             unregisterReceiver(deliveredBroadcast);
@@ -78,70 +96,49 @@ public class Main extends AppCompatActivity {
             unregisterReceiver(sentBroadcast);
             sentBroadcast=null;
         }
-        super.onPause();
     }
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Creation emission/reception sms functions
-        sentIntentFilter=new IntentFilter(SENT);
-        deliveredIntentFilter=new IntentFilter(DELIVERED);
-        sentBroadcast=new sentReceiver();
-        deliveredBroadcast=new deliveredReceiver();
-
         //Layout
         setContentView(R.layout.activity_main);
 
         //Get preferences inside usable variables
-        myVar=getSharedPreferences(MY_PREF,Context.MODE_PRIVATE);
-        myVarEditor=myVar.edit();
-        aigLastPosit=myVar.getString("aigLastPosit","1");
-        inFamilleGps=myVar.getBoolean("inFamilleGPS",false);
-        inTravailGps=myVar.getBoolean("inTravailGPS",false);
-        inJokerGps=myVar.getBoolean("inJokerGPS",false);
-        inMaisonGps=myVar.getBoolean("inMaisonGPS",false);
+        myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
+        myVarEditor = myVar.edit();
+        aigLastPosit = myVar.getString("aigLastPosit", "4");
+        inFamilleGps = myVar.getBoolean("inFamilleGPS", false);
+        inTravailGps = myVar.getBoolean("inTravailGPS", false);
+        inJokerGps = myVar.getBoolean("inJokerGPS", false);
+        inMaisonGps = myVar.getBoolean("inMaisonGPS", false);
 
         //Set Hand image
-        aigChoosed=myVar.getInt("aigChoosed",8);
+        aigChoosed = myVar.getInt("aigChoosed", 8);
         aigImg = findViewById(R.id.Aiguille);
-        aigImg.setImageResource(aigImgID[aigChoosed-1]);
+        aigImg.setImageResource(aigImgID[aigChoosed - 1]);
 
-        //Check gps information and hand positioning
-        positGps = BooleantoString(inFamilleGps)+BooleantoString(inTravailGps)+BooleantoString(inJokerGps)+BooleantoString(inMaisonGps);
-        switch (positGps){
-            case "0000": //Not inside any Geofence
-                aigNewPosit="4";
-                break;
-            case "1000": //Inside Family Geofence
-                aigNewPosit="1";
-                break;
-            case "0100": //Inside Travail Geofence
-            case "1100": //Inside Family and Travail Geofence
-                aigNewPosit="2";
-                break;
-            case "0010": //Inside Joker Geofence
-                aigNewPosit="5";
-                break;
-            case "0001": //Inside Maison Geofence
-                aigNewPosit="7";
-                break;
-            default:
-                aigNewPosit=aigLastPosit; //If none of above possibility = ERROR
-                Toast.makeText(getBaseContext(), "Configuration des zones non pris en charge. Veuillez vérifier la disposition des zones GPS.", Toast.LENGTH_LONG).show();
-                break;
+        //Check Permission
+        if(checkPermission()) {
+            //Creation emission/reception sms functions
+            sentIntentFilter = new IntentFilter(SENT);
+            deliveredIntentFilter = new IntentFilter(DELIVERED);
+            sentBroadcast = new sentReceiver();
+            deliveredBroadcast = new deliveredReceiver();
+            //Register emission/reception sms
+            registerReceiver(sentBroadcast, sentIntentFilter);
+            registerReceiver(deliveredBroadcast, deliveredIntentFilter);
+            appContext = getApplicationContext();
+            geofencingClient = LocationServices.getGeofencingClient(appContext);
+            //Check gps information and hand positioning
+            positGps = BooleantoString(inFamilleGps) + BooleantoString(inTravailGps) + BooleantoString(inJokerGps) + BooleantoString(inMaisonGps);
+            if (positGps.equals("0000")) {
+                setPositManuel(aigLastPosit);
+            }
+        }else{
+            askPermission();
         }
-        setPositAuto(aigNewPosit);
     }
-    //Hand positioning by code
-    public void setPositAuto(String s){
-        try {
-            aigPositInt = Integer.parseInt(s);
-        } catch(NumberFormatException nfe) {
-            Toast.makeText(getBaseContext(), "Valeur position de l'aiguille non sous forme d'entier", Toast.LENGTH_LONG).show();
-        }
-        aigImg.setRotation(aigPositInt * 40 + 320);
-        SendSMS(s);
-    }
+
     //Hand positioning by user choice
     public void setPositManuel(String s) {
         try {
@@ -149,7 +146,7 @@ public class Main extends AppCompatActivity {
         } catch(NumberFormatException nfe) {
             Toast.makeText(getBaseContext(), "Valeur position de l'aiguille non sous forme d'entier", Toast.LENGTH_LONG).show();
         }
-        if (positGps.equals("0000")){//If not inside any geofence
+        if (positGps.equals("0000")||!myVar.getBoolean("GpsEnable",false)){//If not inside any geofence
             aigImg.setRotation(aigPositInt * 40 + 320);
             SendSMS(s);
         }else {
@@ -288,6 +285,8 @@ public class Main extends AppCompatActivity {
         super.onPrepareOptionsMenu(menu);
         //Set the notifications menu item checked corresponding to registered preferences
         menu.findItem(R.id.action_bar_notifs).setChecked(myVar.getBoolean("notifsEnable",true));
+        //Set the notifications menu item checked corresponding to registered preferences
+        menu.findItem(R.id.action_bar_GPS).setChecked(myVar.getBoolean("GpsEnable",false));
         return true;
     }
     @Override
@@ -310,7 +309,21 @@ public class Main extends AppCompatActivity {
                     item.setChecked(true);
                     myVarEditor.putBoolean("notifsEnable",true);
                 }
-                myVarEditor.commit();
+                myVarEditor.apply();
+                return true;
+            case R.id.action_bar_GPS: //Gps fonction permission
+                if(item.isChecked()){
+                    Toast.makeText(getBaseContext(), "Fonction GPS désactivée", Toast.LENGTH_SHORT).show();
+                    item.setChecked(false);
+                    myVarEditor.putBoolean("GpsEnable",false);
+                    removeAllGeofence();
+                }else{
+                    Toast.makeText(getBaseContext(), "Fonction GPS activée", Toast.LENGTH_SHORT).show();
+                    item.setChecked(true);
+                    myVarEditor.putBoolean("GpsEnable",true);
+                    setAllGeofence();
+                }
+                myVarEditor.apply();
                 return true;
             case R.id.action_aiguille: //Hand Choice
                 AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
@@ -354,15 +367,20 @@ public class Main extends AppCompatActivity {
     }
 
     // Check for permission to access Location
-    private void checkPermission() {
+    private boolean checkPermission() {
         Log.d(TAG, "checkPermission()");
+        return (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+                == PackageManager.PERMISSION_GRANTED );
+    }
+    //Ask for permission to send sms
+    public void askPermission(){
         if (!(ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
                 == PackageManager.PERMISSION_GRANTED )){
 
-                Log.d(TAG, "askPermission()");
-                ActivityCompat.requestPermissions(
-                        this,
-                        new String[]{Manifest.permission.SEND_SMS}, RequestCode_SEND_SMS);
+            Log.d(TAG, "askPermission()");
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.SEND_SMS}, RequestCode_SEND_SMS);
         }
     }
     // Verify user's response of the permission requested
@@ -394,8 +412,8 @@ public class Main extends AppCompatActivity {
         Log.w(TAG, "permissionsDenied()");
         AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
         builder.setTitle("Permissions nécessaires");
-        builder.setMessage("L'envoi de sms est nécessaire afin de pouvoir communiquer avec l'horloge." +
-                "Etes-vous sûr de ne pas autoriser l'application ?"+
+        builder.setMessage("L'envoi de sms est nécessaire afin de pouvoir communiquer avec l'horloge.\n" +
+                "Etes-vous sûr de ne pas autoriser l'application ?\n"+
                 "(L'application se fermera !)");
         builder.setPositiveButton("Rien à foutre !", new DialogInterface.OnClickListener() {
             @Override
@@ -406,7 +424,7 @@ public class Main extends AppCompatActivity {
         builder.setNegativeButton("Oups, désolé !", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                checkPermission();
+                askPermission();
             }
         });
         AlertDialog dialog = builder.create();
@@ -416,7 +434,7 @@ public class Main extends AppCompatActivity {
         Log.w(TAG, "permissionsDenied()");
         AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
         builder.setTitle("Permissions nécessaires");
-        builder.setMessage("L'envoi de sms est nécessaire afin de pouvoir communiquer avec l'horloge." +
+        builder.setMessage("L'envoi de sms est nécessaire afin de pouvoir communiquer avec l'horloge.\n" +
                 "Veuillez autoriser son utilisation dans les autorisations systèmes de l'application si vous voulez utiliser cette application! ");
         builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
@@ -431,4 +449,76 @@ public class Main extends AppCompatActivity {
         finish();
     }
 
+    //Activation/Deletion GPS fonction
+    private void removeAllGeofence(){
+        for(int idGeofence=0;idGeofence<=3;idGeofence++){
+            final String idGeofenceString = positionID[idGeofence];
+            if(myVar.getBoolean("gpsDefine"+idGeofenceString,false)) {
+                geofencingClient.removeGeofences(getGeofencePendingIntent(idGeofence))
+                        .addOnSuccessListener(this, new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Toast.makeText(getBaseContext(), idGeofenceString + " succeed to delete", Toast.LENGTH_LONG).show();
+                            }
+                        })
+                        .addOnFailureListener(this, new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(getBaseContext(), idGeofenceString + " " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
+            }
+        }
+    }
+    //Geofence edition function
+    private void setAllGeofence(){
+        for(int idGeofence=0;idGeofence<=3;idGeofence++) {
+            final String idGeofenceString=positionID[idGeofence];
+            if(myVar.getBoolean("gpsDefine"+idGeofenceString,false)) {
+                LatLng point = new LatLng(Double.parseDouble(myVar.getString("lat" + idGeofenceString, "NA")),
+                        Double.parseDouble(myVar.getString("lng" + idGeofenceString, "NA")));
+                int radius = myVar.getInt("radiusSize" + idGeofenceString, 0);
+                //Modify Geofence inside the list
+                geofenceList.add(0, new Geofence.Builder()
+                        .setRequestId(String.valueOf(idGeofence))
+                        .setCircularRegion(point.latitude, point.longitude,radius)
+                        .setExpirationDuration(NEVER_EXPIRE)
+                        .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER | Geofence.GEOFENCE_TRANSITION_EXIT)
+                        .build());
+                //Add the geofence receiver
+                geofencingClient.addGeofences(getGeofencingRequest(), getGeofencePendingIntent(idGeofence))
+                        .addOnSuccessListener(this, new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Toast.makeText(getApplicationContext(), idGeofenceString + "Sucess", Toast.LENGTH_LONG).show();
+                            }
+                        })
+                        .addOnFailureListener(this, new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(getApplicationContext(), idGeofenceString + e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
+            }
+        }
+    }
+
+    private GeofencingRequest getGeofencingRequest() {
+        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
+        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER|Geofence.GEOFENCE_TRANSITION_EXIT);
+        builder.addGeofences(geofenceList);
+        return builder.build();
+    }
+    private PendingIntent getGeofencePendingIntent(int id) {
+        if (geofencePendingIntent != null) {
+            Log.v("Geofence","Geofence pending intent already existant");
+            return geofencePendingIntent;
+        }
+        Intent intent = new Intent(appContext, ProximityReceiver.class);
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when
+        // calling addGeofences() and removeGeofences().
+        geofencePendingIntent = PendingIntent.getBroadcast(appContext, id, intent, PendingIntent.
+                FLAG_UPDATE_CURRENT);
+        return geofencePendingIntent;
+    }
 }
