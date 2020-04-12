@@ -29,4 +29,7 @@
     <item
         android:id="@+id/action_aiguille"
         android:title="@string/MenuAiguille" />
+    <item
+        android:id="@+id/params_Gps"
+        android:title="@string/paramGps" />
 </menu>

@@ -12,18 +12,24 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.SmsManager;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ImageView;
+import android.widget.NumberPicker;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.google.android.gms.location.Geofence;
@@ -38,7 +44,7 @@ import java.util.ArrayList;
 
 import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
 
-public class Main extends AppCompatActivity {
+public class Main extends AppCompatActivity{
     //Variables preferences
     public static final String MY_PREF="mesPrefs";
     public static final int RequestCode_SEND_SMS=1;
@@ -56,6 +62,8 @@ public class Main extends AppCompatActivity {
     PendingIntent geofencePendingIntent;
     ArrayList<Geofence> geofenceList= new ArrayList<>(1);
     final String[] positionID = {"Famille", "Travail", "Joker", "Maison"};
+    GPSTracker gpsTracker;
+    SmsSender smsSender;
 
     //Variables Main Activity
     private static final String TAG = Main.class.getSimpleName();
@@ -67,6 +75,7 @@ public class Main extends AppCompatActivity {
     final String[] personID ={"Maman","Papa","Marie","Louis","Camille","Perrine","Mathilde","Défaut"};
     int[] aigImgID ={R.mipmap.aig_maman,R.mipmap.aig_papa,R.mipmap.aig_marie,R.mipmap.aig_louis,R.mipmap.aig_camille,R.mipmap.aig_perrine,R.mipmap.aig_mathilde,R.mipmap.aig_defaut};//All Hand mipmap
 
+    /**
     //Variables sms functions
     BroadcastReceiver sentBroadcast;
     BroadcastReceiver deliveredBroadcast;
@@ -74,6 +83,7 @@ public class Main extends AppCompatActivity {
     IntentFilter deliveredIntentFilter;
     String SENT = "SMS_SENT";
     String DELIVERED = "SMS_DELIVERED";
+     **/
 
     @Override
     protected void onStart() {
@@ -87,15 +97,7 @@ public class Main extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        //Delete registration emission/reception sms
-        if(deliveredBroadcast!=null) {
-            unregisterReceiver(deliveredBroadcast);
-            deliveredBroadcast=null;
-        }
-        if (sentBroadcast!=null) {
-            unregisterReceiver(sentBroadcast);
-            sentBroadcast=null;
-        }
+        smsSender.unRegistered();
     }
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -106,34 +108,52 @@ public class Main extends AppCompatActivity {
         //Get preferences inside usable variables
         myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
         myVarEditor = myVar.edit();
+        aigChoosed = myVar.getInt("aigChoosed", 8);
+        aigImg = findViewById(R.id.Aiguille);
+        aigImg.setImageResource(aigImgID[aigChoosed - 1]);
         aigLastPosit = myVar.getString("aigLastPosit", "4");
         inFamilleGps = myVar.getBoolean("inFamilleGPS", false);
         inTravailGps = myVar.getBoolean("inTravailGPS", false);
         inJokerGps = myVar.getBoolean("inJokerGPS", false);
         inMaisonGps = myVar.getBoolean("inMaisonGPS", false);
 
-        //Set Hand image
-        aigChoosed = myVar.getInt("aigChoosed", 8);
-        aigImg = findViewById(R.id.Aiguille);
-        aigImg.setImageResource(aigImgID[aigChoosed - 1]);
+        smsSender=new SmsSender(Main.this);
+        gpsTracker=new GPSTracker(Main.this);
+        if(gpsTracker.canGetLocation()){
+            double latitude = gpsTracker.latitude;
+            double longitude = gpsTracker.longitude;
+            double speed = gpsTracker.speed;
+
+            Toast.makeText(getApplicationContext(), "Your Location is - \nLat: "
+                    + latitude + "\nLong: " + longitude+"\nSpeed: "+speed, Toast.LENGTH_LONG).show();
+        }else{
+            /** can't get location
+            *GPS or Network is not enabled
+            *Ask user to enable GPS/network in settings
+             **/
+            gpsTracker.showSettingsAlert();
+        }
+        
 
         //Check Permission
         if(checkPermission()) {
-            //Creation emission/reception sms functions
-            sentIntentFilter = new IntentFilter(SENT);
-            deliveredIntentFilter = new IntentFilter(DELIVERED);
-            sentBroadcast = new sentReceiver();
-            deliveredBroadcast = new deliveredReceiver();
-            //Register emission/reception sms
-            registerReceiver(sentBroadcast, sentIntentFilter);
-            registerReceiver(deliveredBroadcast, deliveredIntentFilter);
             appContext = getApplicationContext();
             geofencingClient = LocationServices.getGeofencingClient(appContext);
             //Check gps information and hand positioning
             positGps = BooleantoString(inFamilleGps) + BooleantoString(inTravailGps) + BooleantoString(inJokerGps) + BooleantoString(inMaisonGps);
-            if (positGps.equals("0000")) {
-                setPositManuel(aigLastPosit);
+            if(!myVar.getBoolean("Voyage",false)){
+                if (positGps.equals("0000")) {
+                    Log.i(TAG,"Not inside any Geofence, neither in movement");
+                    setPositManuel(aigLastPosit);
+                }else{
+                    Log.i(TAG,"Inside a Geofence but not in movement");
+                    Toast.makeText(this,"Position GPS defined",Toast.LENGTH_SHORT).show();
+                }
+            }else{
+                Log.i(TAG,"In movement");
+                setPositManuel("3");
             }
+
         }else{
             askPermission();
         }
@@ -141,14 +161,16 @@ public class Main extends AppCompatActivity {
 
     //Hand positioning by user choice
     public void setPositManuel(String s) {
+        //Set Hand image
         try {
             aigPositInt = Integer.parseInt(s);
         } catch(NumberFormatException nfe) {
+            Log.e(TAG,"Value passed not an Integer");
             Toast.makeText(getBaseContext(), "Valeur position de l'aiguille non sous forme d'entier", Toast.LENGTH_LONG).show();
         }
         if (positGps.equals("0000")||!myVar.getBoolean("GpsEnable",false)){//If not inside any geofence
             aigImg.setRotation(aigPositInt * 40 + 320);
-            SendSMS(s);
+            smsSender.SendSMS(s);
         }else {
             AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
             builder.setTitle("Attention vous êtes définis dans une zone GPS !");
@@ -164,14 +186,13 @@ public class Main extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
                     aigImg.setRotation(aigPositInt * 40 + 320);
-                    SendSMS(String.valueOf(aigPositInt));
+                    smsSender.SendSMS(String.valueOf(aigPositInt));
                 }
             });
             AlertDialog dialog = builder.create();
             dialog.show();
         }
     }
-
 
     //All buttons function
     public void Famille (View view){
@@ -200,71 +221,6 @@ public class Main extends AppCompatActivity {
     }
     public void VeuxRentrer (View view){
         setPositManuel("9");
-    }
-
-    //Sms functions
-    //Function to send an sms
-    private void SendSMS(final String x) {
-        //Test if last position different than new one
-        if (Integer.parseInt(myVar.getString("aigLastPosit", "1")) != Integer.parseInt(x)) {
-
-            PendingIntent sentPI = PendingIntent.getBroadcast(this, 0,
-                    new Intent(SENT), 0);
-
-            PendingIntent deliveredPI = PendingIntent.getBroadcast(this, 0,
-                    new Intent(DELIVERED), 0);
-
-            // Storing the position
-            myVarEditor.putString("aigLastPosit", x);
-            myVarEditor.apply();
-            //---when the SMS has been sent--
-            android.telephony.SmsManager sms = android.telephony.SmsManager.getDefault();
-            sms.sendTextMessage("+33769424262", null, x, sentPI, deliveredPI);
-        }
-    }
-    //Sms sending receiver and Error handling
-    public class sentReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context arg0, Intent arg1) {
-            switch (getResultCode()) {
-                case Activity.RESULT_OK:
-                    Toast.makeText(getBaseContext(), "SMS sent",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                    Toast.makeText(getBaseContext(), "Generic failure",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_NO_SERVICE:
-                    Toast.makeText(getBaseContext(), "No service",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_NULL_PDU:
-                    Toast.makeText(getBaseContext(), "Null PDU",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_RADIO_OFF:
-                    Toast.makeText(getBaseContext(), "Radio off",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-            }
-        }
-    }
-    //Sms delivered receiver and Error handling
-    public class deliveredReceiver extends BroadcastReceiver{
-        @Override
-        public void onReceive(Context arg0, Intent arg1) {
-            switch (getResultCode()) {
-                case Activity.RESULT_OK:
-                    Toast.makeText(getBaseContext(), "SMS delivered",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case Activity.RESULT_CANCELED:
-                    Toast.makeText(getBaseContext(), "SMS not delivered",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-            }
-        }
     }
 
     //Function to transform Boolean to String 1 or 0
@@ -297,7 +253,8 @@ public class Main extends AppCompatActivity {
                 startActivity(new Intent(Main.this, MapsActivity.class));
                 return true;
             case R.id.action_infos: //Pop-up d'informations
-                Toast.makeText(getBaseContext(), "Créé par Louis Le Nézet", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getBaseContext(), "Créé par Louis Le Nézet \n"+
+                        "Version 1.2.0", Toast.LENGTH_SHORT).show();
                 return true;
             case R.id.action_bar_notifs: //Gps notifications permission
                 if(item.isChecked()){
@@ -326,14 +283,14 @@ public class Main extends AppCompatActivity {
                 myVarEditor.apply();
                 return true;
             case R.id.action_aiguille: //Hand Choice
-                AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
-                builder.setTitle("Choisissez l'aiguille à afficher:");
-                builder.setSingleChoiceItems(personID, myVar.getInt("aigChoosed",8)-1, new DialogInterface.OnClickListener() {
+                AlertDialog.Builder builderAig = new AlertDialog.Builder(Main.this);
+                builderAig.setTitle("Choisissez l'aiguille à afficher:");
+                builderAig.setSingleChoiceItems(personID, myVar.getInt("aigChoosed",8)-1, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
                     }
                 });
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                builderAig.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
                         // Get item selected
@@ -348,19 +305,98 @@ public class Main extends AppCompatActivity {
                         recreate();
                     }
                 });
-                builder.setNegativeButton("Annuler", new DialogInterface.OnClickListener() {
+                builderAig.setNegativeButton("Annuler", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
                     }
                 });
-                AlertDialog dialog = builder.create();
-                dialog.show();
+                AlertDialog dialogAig = builderAig.create();
+                dialogAig.show();
                 return true;
+            case R.id.params_Gps: //Hand Choice
+                Settings();
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
+
+    public boolean Settings(){
+        AlertDialog.Builder builderGps = new AlertDialog.Builder(Main.this);
+        // Get the layout inflater
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.gps_settings,null);
+        builderGps.setView(dialogView);
+        //Time interval choice
+        final NumberPicker nPDuration = dialogView.findViewById(R.id.NumberPickerDuration);
+        final String[] durationPicker = {"1","2","3","4","5","10","15","20","25","30","40","50","60"};
+        final Spinner spinnerDuration = dialogView.findViewById(R.id.DurationSpinner);
+        nPDuration.setMinValue(1);
+        nPDuration.setMaxValue(durationPicker.length);
+        nPDuration.setValue(1);
+        nPDuration.setDisplayedValues(durationPicker);
+        nPDuration.setWrapSelectorWheel(true);
+        nPDuration.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker numberPicker, int i, int i1) {
+                Log.d(TAG, "onValueChange: ");
+            }
+        });
+        //Voyage speed choice
+        final NumberPicker nPSpeed = dialogView.findViewById(R.id.NumberPickerSpeed);
+        final String[] speedPicker = {"5","10","15","20","25","30","40","50","60","70","80","90","100"};
+        nPSpeed.setMinValue(1);
+        nPSpeed.setMaxValue(speedPicker.length);
+        nPSpeed.setValue(6);
+        nPSpeed.setDisplayedValues(speedPicker);
+        nPSpeed.setWrapSelectorWheel(true);
+        nPSpeed.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker numberPicker, int i, int i1) {
+                Log.d(TAG, "onValueChange: ");
+            }
+        });
+        builderGps.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                Integer durationNumber= Integer.valueOf(durationPicker[nPDuration.getValue()-1]);
+                String durationUnit =spinnerDuration.getSelectedItem().toString();
+                Integer timeUpDateGPS;
+                switch (durationUnit){
+                    case "Minutes":
+                        timeUpDateGPS=durationNumber*60*1000;
+                        break;
+                    case "Heures":
+                        timeUpDateGPS=durationNumber*60*60*1000;
+                        break;
+                    default:
+                        timeUpDateGPS=durationNumber*1000;
+                        break;
+                }
+                // Get Minimal speed selected
+                Integer speedNumber=Integer.valueOf(speedPicker[nPSpeed.getValue()-1]);
+                // Opening the editor object to replace data from sharedPreferences
+                SharedPreferences.Editor myVarEditor = myVar.edit();
+                // Change GPS settings in sharedPreference
+                myVarEditor.putInt("timeUpDateGPS",timeUpDateGPS);
+                myVarEditor.putInt("speedMin",speedNumber);
+                Toast.makeText(getBaseContext(),"Update interval in millisecondes : "+timeUpDateGPS,Toast.LENGTH_SHORT).show();// Committing the changes
+                Toast.makeText(getBaseContext(),"Minimal speed for Voyage : "+speedNumber+" km/h",Toast.LENGTH_SHORT).show();              // Committing the changes
+                myVarEditor.apply();
+                recreate();
+            }
+        });
+        builderGps.setNegativeButton("Annuler", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        AlertDialog dialogGps = builderGps.create();
+        dialogGps.show();
+        return true;
+    }
+
     @Override
     protected void onDestroy(){
          super.onDestroy();
@@ -502,7 +538,6 @@ public class Main extends AppCompatActivity {
             }
         }
     }
-
     private GeofencingRequest getGeofencingRequest() {
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
         builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER|Geofence.GEOFENCE_TRANSITION_EXIT);

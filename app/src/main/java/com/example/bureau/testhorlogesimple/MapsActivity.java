@@ -3,9 +3,11 @@ package com.example.bureau.testhorlogesimple;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
@@ -18,6 +20,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -56,8 +59,7 @@ public class MapsActivity extends FragmentActivity
         implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        OnMapReadyCallback,
-        LocationListener {
+        OnMapReadyCallback{
 
     //Preferences
     public static final String MY_PREF="mesPrefs";
@@ -77,7 +79,7 @@ public class MapsActivity extends FragmentActivity
     public static final int RequestCode_GPS_FINE=2;
 
     //Map variable
-    private TextView textLat, textLong;
+    private TextView textLat, textLong,textSpeed;
     private GoogleMap mMap;
     Marker[] markersArray = new Marker[4];
     Circle[] circlesArray = new Circle[4];
@@ -86,8 +88,9 @@ public class MapsActivity extends FragmentActivity
     LocationManager locationManager;
     private Location lastLocation;
     private LocationRequest locationRequest;
-    private final int UPDATE_INTERVAL =  1000;// Defined in mili seconds.
-    private final int FASTEST_INTERVAL = 900;// This number in extremely low, and should be used only for debug
+    private int UPDATE_INTERVAL;// Defined in mili seconds.
+    private int FASTEST_INTERVAL;// This number in extremely low, and should be used only for debug
+    private int speedMin;
 
     //Geofencing API
     private GoogleApiClient googleApiClient;
@@ -100,17 +103,39 @@ public class MapsActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         //Preferences
         myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
+        /*
+        UPDATE_INTERVAL=myVar.getInt("timeUpDateGPS",1000);
+        FASTEST_INTERVAL= (int) (UPDATE_INTERVAL/1.5);
+        speedMin=myVar.getInt("speedMin",30);
+         */
         myVarEditor = myVar.edit();
         if(checkPermission()) {
             if(myVar.getBoolean("GpsEnable",false)) {
                 appContext = getApplicationContext();
-
                 //Layout
                 setContentView(R.layout.activity_maps);
                 textLat = findViewById(R.id.Lat);
                 textLong = findViewById(R.id.Long);
+                textSpeed = findViewById(R.id.Speed);
                 SupportMapFragment mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
                 mapFrag.getMapAsync(this);
+                textLat.setText("Lat: " + GPSTracker.latitude);
+                textLong.setText("Lng: " + GPSTracker.longitude);
+                textSpeed.setText("Spd: " + GPSTracker.speed);
+
+                LocalBroadcastManager.getInstance(this).registerReceiver(
+                        new BroadcastReceiver() {
+                            @Override
+                            public void onReceive(Context context, Intent intent) {
+                                double latitude = intent.getDoubleExtra(GPSTracker.EXTRA_LATITUDE, 00);
+                                double longitude = intent.getDoubleExtra(GPSTracker.EXTRA_LONGITUDE, 00);
+                                double speed = intent.getDoubleExtra(GPSTracker.EXTRA_SPEED,00);
+                                textLat.setText("Lat: " + latitude);
+                                textLong.setText("Lng: " + longitude);
+                                textSpeed.setText("Spd: " + speed);
+                            }
+                        }, new IntentFilter(GPSTracker.ACTION_LOCATION_BROADCAST)
+                );
 
                 //Location
                 locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -402,13 +427,19 @@ public class MapsActivity extends FragmentActivity
                     .addOnConnectionFailedListener( this )
                     .addApi( LocationServices.API )
                     .build();
+        }else{
+            Log.d(TAG, "GoogleApi already created");
         }
     }
     // GoogleApiClient.ConnectionCallbacks connected
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.i(TAG, "onConnected()");
+        //Update location request by removing them
+        /*
+        removeLocationUpdates();
         getLastKnownLocation();
+         */
     }
     // GoogleApiClient.ConnectionCallbacks suspended
     @Override
@@ -421,12 +452,14 @@ public class MapsActivity extends FragmentActivity
         Log.w(TAG, "onConnectionFailed()");
     }
 
+    /**
     //Change in location functions
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, "onLocationChanged ["+location+"]");
         lastLocation = location;
         writeActualLocation(location);
+        myVarEditor.apply();
     }
     // Get last known location
     private void getLastKnownLocation() {
@@ -452,16 +485,29 @@ public class MapsActivity extends FragmentActivity
                 .setPriority(LocationRequest.PRIORITY_LOW_POWER)
                 .setInterval(UPDATE_INTERVAL)
                 .setFastestInterval(FASTEST_INTERVAL);
-
         if ( checkPermission() ) {
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
         }
     }
+    //Remove location Updates
+    private void removeLocationUpdates(){
+        Log.i(TAG, "removeLocationUpdates()");
+        if ( checkPermission() ) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient,this);
+        }
+    }
     // Write location coordinates on UI
+     **/
+
     private void writeActualLocation(Location location) {
+        /**
         textLat.setText( "Lat: " + location.getLatitude() );
         textLong.setText( "Long: " + location.getLongitude() );
+        textSpeed.setText("Speed: "+location.getSpeed());
+        **/
     }
+
+
     private void writeLastLocation() {
         writeActualLocation(lastLocation);
     }
@@ -580,10 +626,12 @@ public class MapsActivity extends FragmentActivity
     @Override
     public void onResume() {
         super.onResume();
+        startService(new Intent(this, GPSTracker.class));
     }
     @Override
     public void onPause() {
         super.onPause();
+        stopService(new Intent(this, GPSTracker.class));
     }
 }
 

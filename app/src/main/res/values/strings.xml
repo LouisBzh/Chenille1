@@ -23,4 +23,9 @@
     <string name="MenuAiguille">Choix aiguille</string>
     <string name="Latitude">Latitude</string>
     <string name="Longitude">Longitude</string>
+    <string name="paramGps">Paramètres GPS</string>
+    <string name="GpsDurationUDate">Intervalle de mise à jour de la position GPS :</string>
+    <string name="Vitesse">Vitesse</string>
+    <string name="VoyageSpeedChoice">Vitesse minimale pour la position Voyage :</string>
+    <string name="SpeedUnit">km/h</string>
 </resources>
