@@ -24,8 +24,9 @@
     <string name="Latitude">Latitude</string>
     <string name="Longitude">Longitude</string>
     <string name="paramGps">Paramètres GPS</string>
-    <string name="GpsDurationUDate">Intervalle de mise à jour de la position GPS :</string>
+    <string name="GpsDurationUDate">Durée entre 2 mise à jour de la position \nGPS :</string>
     <string name="Vitesse">Vitesse</string>
-    <string name="VoyageSpeedChoice">Vitesse minimale pour la position Voyage :</string>
+    <string name="VoyageSpeedChoice">Vitesse minimale pour la position \nVoyage :</string>
     <string name="SpeedUnit">km/h</string>
+    <string name="GPSDistanceUpdate">Distance pour une mise à jour de la \nposition GPS</string>
 </resources>

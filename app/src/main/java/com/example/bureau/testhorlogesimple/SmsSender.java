@@ -31,7 +31,7 @@ public class SmsSender extends Service {
     public static final int RequestCode_SEND_SMS=1;
 
     public SmsSender(Context context){
-        mContext=context;
+        mContext=context.getApplicationContext();
         onCreate();
     }
 
@@ -90,7 +90,7 @@ public class SmsSender extends Service {
         public void onReceive(Context arg0, Intent arg1) {
             switch (getResultCode()) {
                 case Activity.RESULT_OK:
-                    Toast.makeText(receiverContext, "SMS sent",
+                    Toast.makeText(receiverContext, "SMS envoyé",
                             Toast.LENGTH_SHORT).show();
                     break;
                 case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
@@ -98,7 +98,7 @@ public class SmsSender extends Service {
                             Toast.LENGTH_SHORT).show();
                     break;
                 case SmsManager.RESULT_ERROR_NO_SERVICE:
-                    Toast.makeText(receiverContext, "No service",
+                    Toast.makeText(receiverContext, "Pas de service disponible",
                             Toast.LENGTH_SHORT).show();
                     break;
                 case SmsManager.RESULT_ERROR_NULL_PDU:
@@ -119,11 +119,11 @@ public class SmsSender extends Service {
         public void onReceive(Context arg0, Intent arg1) {
             switch (getResultCode()) {
                 case Activity.RESULT_OK:
-                    Toast.makeText(receiverContext, "SMS delivered",
+                    Toast.makeText(receiverContext, "SMS reçu",
                             Toast.LENGTH_SHORT).show();
                     break;
                 case Activity.RESULT_CANCELED:
-                    Toast.makeText(receiverContext, "SMS not delivered",
+                    Toast.makeText(receiverContext, "SMS non reçu",
                             Toast.LENGTH_SHORT).show();
                     break;
             }

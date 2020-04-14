@@ -5,4 +5,10 @@
         <item name="Minutes">Minutes</item>
         <item name="Heures">Heures</item>
     </string-array>
+    <string-array name="DistanceSpinner">
+        <item name="Metres">Mètres</item>
+        <item name="Decametres">Décamètres</item>
+        <item name="Hectometres">Hectomètres</item>
+        <item name="Kilometres">Kilomètres</item>
+    </string-array>
 </resources>

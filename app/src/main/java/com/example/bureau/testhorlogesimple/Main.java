@@ -1,32 +1,24 @@
 package com.example.bureau.testhorlogesimple;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.Location;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
 import android.widget.Spinner;
@@ -123,9 +115,10 @@ public class Main extends AppCompatActivity{
             double latitude = gpsTracker.latitude;
             double longitude = gpsTracker.longitude;
             double speed = gpsTracker.speed;
-
-            Toast.makeText(getApplicationContext(), "Your Location is - \nLat: "
-                    + latitude + "\nLong: " + longitude+"\nSpeed: "+speed, Toast.LENGTH_LONG).show();
+            if(latitude!=0) {
+                Toast.makeText(getApplicationContext(), "Votre position est - \nLat: "
+                        + latitude + "\nLong: " + longitude + "\nVit: " + speed, Toast.LENGTH_LONG).show();
+            }
         }else{
             /** can't get location
             *GPS or Network is not enabled
@@ -314,23 +307,24 @@ public class Main extends AppCompatActivity{
                 AlertDialog dialogAig = builderAig.create();
                 dialogAig.show();
                 return true;
-            case R.id.params_Gps: //Hand Choice
-                Settings();
+            case R.id.params_Gps: //GPS parameters selection
+                GPSsettings();
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
-
-    public boolean Settings(){
+    //GPS settings
+    public void GPSsettings(){
         AlertDialog.Builder builderGps = new AlertDialog.Builder(Main.this);
         // Get the layout inflater
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.gps_settings,null);
         builderGps.setView(dialogView);
+
         //Time interval choice
         final NumberPicker nPDuration = dialogView.findViewById(R.id.NumberPickerDuration);
         final String[] durationPicker = {"1","2","3","4","5","10","15","20","25","30","40","50","60"};
-        final Spinner spinnerDuration = dialogView.findViewById(R.id.DurationSpinner);
+        final Spinner spinnerDuration = dialogView.findViewById(R.id.durationSpinner);
         nPDuration.setMinValue(1);
         nPDuration.setMaxValue(durationPicker.length);
         nPDuration.setValue(1);
@@ -342,6 +336,23 @@ public class Main extends AppCompatActivity{
                 Log.d(TAG, "onValueChange: ");
             }
         });
+
+        //Time interval choice
+        final NumberPicker nPDistance = dialogView.findViewById(R.id.NumberPickerDistance);
+        final String[] distancePicker = {"1","2","3","4","5","6","7","8","9","10"};
+        final Spinner spinnerDistance = dialogView.findViewById(R.id.distanceSpinner);
+        nPDistance.setMinValue(1);
+        nPDistance.setMaxValue(distancePicker.length);
+        nPDistance.setValue(1);
+        nPDistance.setDisplayedValues(distancePicker);
+        nPDistance.setWrapSelectorWheel(true);
+        nPDistance.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker numberPicker, int i, int i1) {
+                Log.d(TAG, "onValueChange: ");
+            }
+        });
+
         //Voyage speed choice
         final NumberPicker nPSpeed = dialogView.findViewById(R.id.NumberPickerSpeed);
         final String[] speedPicker = {"5","10","15","20","25","30","40","50","60","70","80","90","100"};
@@ -359,6 +370,7 @@ public class Main extends AppCompatActivity{
         builderGps.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
+                //Get Time update GPS
                 Integer durationNumber= Integer.valueOf(durationPicker[nPDuration.getValue()-1]);
                 String durationUnit =spinnerDuration.getSelectedItem().toString();
                 Integer timeUpDateGPS;
@@ -373,15 +385,35 @@ public class Main extends AppCompatActivity{
                         timeUpDateGPS=durationNumber*1000;
                         break;
                 }
+                //Get Distance update GPS
+                Integer distanceNumber = Integer.valueOf(distancePicker[nPDistance.getValue()-1]);
+                String distanceUnit = spinnerDistance.getSelectedItem().toString();
+                Integer distanceUpDateGPS;
+                switch (distanceUnit){
+                    case "Kilomètres":
+                        distanceUpDateGPS=distanceNumber*1000;
+                        break;
+                    case "Hectomètres":
+                        distanceUpDateGPS=distanceNumber*100;
+                        break;
+                    case "Décamètres":
+                        distanceUpDateGPS=distanceNumber*10;
+                        break;
+                    default:
+                        distanceUpDateGPS=distanceNumber;
+                        break;
+                }
                 // Get Minimal speed selected
                 Integer speedNumber=Integer.valueOf(speedPicker[nPSpeed.getValue()-1]);
                 // Opening the editor object to replace data from sharedPreferences
                 SharedPreferences.Editor myVarEditor = myVar.edit();
                 // Change GPS settings in sharedPreference
                 myVarEditor.putInt("timeUpDateGPS",timeUpDateGPS);
+                myVarEditor.putInt("distanceUpDateGPS",distanceUpDateGPS);
                 myVarEditor.putInt("speedMin",speedNumber);
                 Toast.makeText(getBaseContext(),"Update interval in millisecondes : "+timeUpDateGPS,Toast.LENGTH_SHORT).show();// Committing the changes
-                Toast.makeText(getBaseContext(),"Minimal speed for Voyage : "+speedNumber+" km/h",Toast.LENGTH_SHORT).show();              // Committing the changes
+                Toast.makeText(getBaseContext(),"Update distance in meters : "+distanceUpDateGPS,Toast.LENGTH_SHORT).show();// Committing the changes
+                Toast.makeText(getBaseContext(),"Minimal speed for Voyage : "+speedNumber+" km/h",Toast.LENGTH_SHORT).show();// Committing the changes
                 myVarEditor.apply();
                 recreate();
             }
@@ -394,7 +426,6 @@ public class Main extends AppCompatActivity{
         });
         AlertDialog dialogGps = builderGps.create();
         dialogGps.show();
-        return true;
     }
 
     @Override
@@ -500,7 +531,7 @@ public class Main extends AppCompatActivity{
                         .addOnFailureListener(this, new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(getBaseContext(), idGeofenceString + " " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                Toast.makeText(getBaseContext(), idGeofenceString + " failed to delete\n" + e.getMessage(), Toast.LENGTH_LONG).show();
                             }
                         });
             }

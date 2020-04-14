@@ -25,7 +25,7 @@
         android:actionLayout="@layout/switch_item"
         android:checkable="true"
         android:title="@string/MenuGPS"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="never" />
     <item
         android:id="@+id/action_aiguille"
         android:title="@string/MenuAiguille" />

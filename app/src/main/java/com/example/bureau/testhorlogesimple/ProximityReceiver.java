@@ -44,6 +44,7 @@ public class ProximityReceiver extends BroadcastReceiver {
     Boolean inMaisonGps;
     String positGps="0000";//String coding if gps position inside Famille/Travail/Joker/Maison
     //Variables sms functions
+    SmsSender smsSender;
     BroadcastReceiver sentBroadcast;
     BroadcastReceiver deliveredBroadcast;
     IntentFilter sentIntentFilter;
@@ -59,13 +60,8 @@ public class ProximityReceiver extends BroadcastReceiver {
         //Get the preferences registered
         myVar=context.getSharedPreferences(MY_PREF,context.MODE_PRIVATE);
         myVarEditor = myVar.edit();
+        smsSender=new SmsSender(context);
         if(myVar.getBoolean("GpsEnable",false)) {
-            //Creation emission/reception sms functions
-            sentIntentFilter=new IntentFilter(SENT);
-            deliveredIntentFilter=new IntentFilter(DELIVERED);
-            sentBroadcast=new ProximityReceiver.sentReceiver();
-            deliveredBroadcast=new ProximityReceiver.deliveredReceiver();
-
             //Get the event triggered
             GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
             if (geofencingEvent.hasError()) {
@@ -105,19 +101,14 @@ public class ProximityReceiver extends BroadcastReceiver {
 
                 //Show notification if permitted
                 if (notifDisplay) {
-
                     Intent notificationIntent = new Intent(context, Main.class);
                     notificationIntent.putExtra("content", notificationContent);
-
                     // This is needed to make this intent different from its previous intents
                     notificationIntent.setData(Uri.parse("tel:/" + (int) System.currentTimeMillis()));
-
                     // Creating different tasks for each notification. See the flag Intent.FLAG_ACTIVITY_NEW_TASK
                     PendingIntent pendingIntentNotif = PendingIntent.getActivity(context.getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
                     // Getting the System service NotificationManager
                     NotificationManager nManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
                     //Configuring notification builder to create a notification
                     NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                             .setWhen(System.currentTimeMillis())
@@ -127,11 +118,8 @@ public class ProximityReceiver extends BroadcastReceiver {
                             .setAutoCancel(true)
                             .setTicker(tickerMessage)
                             .setContentIntent(pendingIntentNotif);
-
-
                     //Creating a notification from the notification builder
                     Notification notification = notificationBuilder.build();
-
                     /* Sending the notification to system.
                      The first argument ensures that each notification is having a unique id
                      If two notifications share same notification id, then the last notification replaces the first notification
@@ -141,7 +129,7 @@ public class ProximityReceiver extends BroadcastReceiver {
             }
 
             //Send SMS
-            aigLastPosit=myVar.getString("aigLastPosit","1");
+            aigLastPosit=myVar.getString("aigLastPosit","4");
             inFamilleGps=myVar.getBoolean("inFamilleGPS",false);
             inTravailGps=myVar.getBoolean("inTravailGPS",false);
             inJokerGps=myVar.getBoolean("inJokerGPS",false);
@@ -171,80 +159,9 @@ public class ProximityReceiver extends BroadcastReceiver {
                     Toast.makeText(context, "Configuration des zones non pris en charge. Veuillez vérifier la disposition des zones GPS.", Toast.LENGTH_LONG).show();
                     break;
             }
-            SendSMS(aigNewPosit,context);
+            smsSender.SendSMS(aigNewPosit);
         }else{
-            Log.d("Erreur","Situation création ou déclenchement géofence malgré GPS désactivé !");
-        }
-    }
-    //Sms functions
-    //Function to send an sms
-    private void SendSMS(final String x,Context context) {
-        //Test if last position different than new one
-        if (Integer.parseInt(myVar.getString("aigLastPosit", "1")) != Integer.parseInt(x)) {
-            PendingIntent sentPI = PendingIntent.getBroadcast(context, 0,
-                    new Intent(SENT), 0);
-            PendingIntent deliveredPI = PendingIntent.getBroadcast(context, 0,
-                    new Intent(DELIVERED), 0);
-
-            // Storing the position
-            myVarEditor.putString("aigLastPosit", x);
-            myVarEditor.apply();
-            //---when the SMS has been sent--
-            android.telephony.SmsManager sms = android.telephony.SmsManager.getDefault();
-            sms.sendTextMessage("+33769424262", null, x, sentPI, deliveredPI);
-        }
-    }
-    //Sms sending receiver and Error handling
-    public class sentReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent arg1) {
-            switch (getResultCode()) {
-                case Activity.RESULT_OK:
-                    Toast.makeText(context, "SMS sent",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                    Toast.makeText(context, "Generic failure",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_NO_SERVICE:
-                    Toast.makeText(context, "No service",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_NULL_PDU:
-                    Toast.makeText(context, "Null PDU",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-                case SmsManager.RESULT_ERROR_RADIO_OFF:
-                    Toast.makeText(context, "Radio off",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-            }
-        }
-    }
-    //Sms delivered receiver and Error handling
-    public class deliveredReceiver extends BroadcastReceiver{
-        @Override
-        public void onReceive(Context context, Intent arg1) {
-            switch (getResultCode()) {
-                case Activity.RESULT_OK:
-                    Toast.makeText(context, "SMS delivered",
-                            Toast.LENGTH_SHORT).show();
-                    //Delete registration emission/reception sms
-                    if(deliveredBroadcast!=null) {
-                        context.unregisterReceiver(deliveredBroadcast);
-                        deliveredBroadcast=null;
-                    }
-                    if (sentBroadcast!=null) {
-                        context.unregisterReceiver(sentBroadcast);
-                        sentBroadcast=null;
-                    }
-                    break;
-                case Activity.RESULT_CANCELED:
-                    Toast.makeText(context, "SMS not delivered",
-                            Toast.LENGTH_SHORT).show();
-                    break;
-            }
+            Log.e(TAG,"Situation de création ou de déclenchement géofence malgré GPS désactivé !");
         }
     }
 }

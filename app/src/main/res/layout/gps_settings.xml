@@ -25,11 +25,12 @@
         android:layout_marginTop="16dp"
         android:text="@string/GpsDurationUDate"
         android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/GpsSettings" />
 
     <Spinner
-        android:id="@+id/DurationSpinner"
+        android:id="@+id/durationSpinner"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:entries="@array/DurationSpinner"
@@ -40,32 +41,52 @@
         app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
         app:layout_constraintTop_toTopOf="@+id/NumberPickerDuration" />
 
+    <Spinner
+        android:id="@+id/distanceSpinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:entries="@array/DistanceSpinner"
+        android:spinnerMode="dropdown"
+        app:layout_constraintBottom_toBottomOf="@+id/NumberPickerDistance"
+        app:layout_constraintStart_toStartOf="@+id/durationSpinner"
+        app:layout_constraintTop_toTopOf="@+id/NumberPickerDistance"
+        app:layout_constraintVertical_bias="0.5" />
+
     <NumberPicker
         android:id="@+id/NumberPickerDuration"
         android:layout_width="60dp"
         android:layout_height="72dp"
         android:layout_marginTop="20dp"
-        app:layout_constraintEnd_toStartOf="@+id/DurationSpinner"
+        app:layout_constraintEnd_toStartOf="@+id/durationSpinner"
         app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
         app:layout_constraintTop_toBottomOf="@+id/GpsSettingsUpDate" />
 
-    <TextView
-        android:id="@+id/textSpeedChoice"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="@string/VoyageSpeedChoice"
-        android:textSize="18sp"
+    <NumberPicker
+        android:id="@+id/NumberPickerDistance"
+        android:layout_width="60dp"
+        android:layout_height="72dp"
+        android:layout_marginTop="20dp"
+        app:layout_constraintEnd_toStartOf="@+id/durationSpinner"
         app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
-        app:layout_constraintTop_toBottomOf="@+id/NumberPickerDuration" />
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
 
     <NumberPicker
         android:id="@+id/NumberPickerSpeed"
         android:layout_width="60dp"
         android:layout_height="72dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="24dp"
         app:layout_constraintStart_toStartOf="@+id/NumberPickerDuration"
         app:layout_constraintTop_toBottomOf="@+id/textSpeedChoice" />
+
+    <TextView
+        android:id="@+id/textSpeedChoice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/VoyageSpeedChoice"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
+        app:layout_constraintTop_toBottomOf="@+id/NumberPickerDistance" />
 
     <TextView
         android:id="@+id/textSpeedUnit"
@@ -74,7 +95,17 @@
         android:text="@string/SpeedUnit"
         android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="@+id/NumberPickerSpeed"
-        app:layout_constraintStart_toStartOf="@+id/DurationSpinner"
+        app:layout_constraintStart_toStartOf="@+id/distanceSpinner"
         app:layout_constraintTop_toTopOf="@+id/NumberPickerSpeed" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/GPSDistanceUpdate"
+        android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
+        app:layout_constraintTop_toBottomOf="@+id/NumberPickerDuration" />
 
 </android.support.constraint.ConstraintLayout>

@@ -70,7 +70,7 @@ public class GPSTracker extends Service
     private LocationRequest locationRequest;
     private int UPDATE_INTERVAL;// Defined in mili seconds.
     private int FASTEST_INTERVAL;// This number in extremely low, and should be used only for debug
-    private static int UPDATE_DISTANCE=100; // The minimum distance to change Updates in meters
+    private int UPDATE_DISTANCE; // The minimum distance to change Updates in meters
     private int speedMin;
 
     //Geofencing API
@@ -96,6 +96,7 @@ public class GPSTracker extends Service
             if (checkPermission()) {
                 myVar = mContext.getSharedPreferences(MY_PREF, MODE_PRIVATE);
                 UPDATE_INTERVAL=myVar.getInt("timeUpDateGPS",1000);
+                UPDATE_DISTANCE=myVar.getInt("distanceUpDateGPS",100);
                 FASTEST_INTERVAL= (int) (UPDATE_INTERVAL/1.5);
                 speedMin=myVar.getInt("speedMin",30);
                 myVarEditor = myVar.edit();
@@ -191,8 +192,8 @@ public class GPSTracker extends Service
         Log.d(TAG, "onLocationChanged ["+location+"]");
         lastLocation = location;
         sendBroadcastMessage(location);
-        SmsSender smsSender=new SmsSender(mContext);
         if(location.getSpeed()>speedMin){
+            SmsSender smsSender=new SmsSender(mContext);
             myVarEditor.putBoolean("Voyage",true);
             smsSender.SendSMS("3");
         }else{

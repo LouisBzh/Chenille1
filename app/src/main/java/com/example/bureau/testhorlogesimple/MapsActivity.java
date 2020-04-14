@@ -57,8 +57,8 @@ import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
 
 public class MapsActivity extends FragmentActivity
         implements
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
+        //GoogleApiClient.ConnectionCallbacks,
+        //GoogleApiClient.OnConnectionFailedListener,
         OnMapReadyCallback{
 
     //Preferences
@@ -88,9 +88,6 @@ public class MapsActivity extends FragmentActivity
     LocationManager locationManager;
     private Location lastLocation;
     private LocationRequest locationRequest;
-    private int UPDATE_INTERVAL;// Defined in mili seconds.
-    private int FASTEST_INTERVAL;// This number in extremely low, and should be used only for debug
-    private int speedMin;
 
     //Geofencing API
     private GoogleApiClient googleApiClient;
@@ -103,11 +100,6 @@ public class MapsActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         //Preferences
         myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
-        /*
-        UPDATE_INTERVAL=myVar.getInt("timeUpDateGPS",1000);
-        FASTEST_INTERVAL= (int) (UPDATE_INTERVAL/1.5);
-        speedMin=myVar.getInt("speedMin",30);
-         */
         myVarEditor = myVar.edit();
         if(checkPermission()) {
             if(myVar.getBoolean("GpsEnable",false)) {
@@ -140,9 +132,9 @@ public class MapsActivity extends FragmentActivity
                 //Location
                 locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
                 geofencingClient = LocationServices.getGeofencingClient(appContext);
-                createGoogleApi();
+                //createGoogleApi();
                 // Call GoogleApiClient connection when starting the Activity
-                googleApiClient.connect();
+                //googleApiClient.connect();
             }else{
                 Toast.makeText(getBaseContext(),"GPS non activé",Toast.LENGTH_LONG).show();
                 startActivity(new Intent(MapsActivity.this, Main.class));
@@ -418,6 +410,7 @@ public class MapsActivity extends FragmentActivity
         return geofencePendingIntent;
     }
 
+    /*
     // Create GoogleApiClient instance
     private void createGoogleApi() {
         Log.d(TAG, "createGoogleApi()");
@@ -435,11 +428,6 @@ public class MapsActivity extends FragmentActivity
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.i(TAG, "onConnected()");
-        //Update location request by removing them
-        /*
-        removeLocationUpdates();
-        getLastKnownLocation();
-         */
     }
     // GoogleApiClient.ConnectionCallbacks suspended
     @Override
@@ -451,70 +439,9 @@ public class MapsActivity extends FragmentActivity
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         Log.w(TAG, "onConnectionFailed()");
     }
+     */
 
-    /**
-    //Change in location functions
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.d(TAG, "onLocationChanged ["+location+"]");
-        lastLocation = location;
-        writeActualLocation(location);
-        myVarEditor.apply();
-    }
-    // Get last known location
-    private void getLastKnownLocation() {
-        Log.d(TAG, "getLastKnownLocation()");
-        if ( checkPermission() ) {
-            lastLocation = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-            if ( lastLocation != null ) {
-                Log.i(TAG, "LasKnown location. " +
-                        "Long: " + lastLocation.getLongitude() +
-                        " | Lat: " + lastLocation.getLatitude());
-                writeLastLocation();
-                startLocationUpdates();
-            } else {
-                Log.w(TAG, "No location retrieved yet");
-                startLocationUpdates();
-            }
-        }
-    }
-    // Start location Updates
-    private void startLocationUpdates(){
-        Log.i(TAG, "startLocationUpdates()");
-        locationRequest = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_LOW_POWER)
-                .setInterval(UPDATE_INTERVAL)
-                .setFastestInterval(FASTEST_INTERVAL);
-        if ( checkPermission() ) {
-            LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
-        }
-    }
-    //Remove location Updates
-    private void removeLocationUpdates(){
-        Log.i(TAG, "removeLocationUpdates()");
-        if ( checkPermission() ) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient,this);
-        }
-    }
-    // Write location coordinates on UI
-     **/
-
-    private void writeActualLocation(Location location) {
-        /**
-        textLat.setText( "Lat: " + location.getLatitude() );
-        textLong.setText( "Long: " + location.getLongitude() );
-        textSpeed.setText("Speed: "+location.getSpeed());
-        **/
-    }
-
-
-    private void writeLastLocation() {
-        writeActualLocation(lastLocation);
-    }
-
-
-    //Permissions
-    // Check for permission to access Location
+    //Check for permission to access Location
     private boolean checkPermission() {
         Log.d(TAG, "checkPermission()");
         return (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -600,6 +527,7 @@ public class MapsActivity extends FragmentActivity
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+
     //Get back functions
     @Override
     public void onBackPressed() {
