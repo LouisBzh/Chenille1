@@ -17,7 +17,7 @@
         tools:text="@string/paramGps" />
 
     <TextView
-        android:id="@+id/GpsSettingsUpDate"
+        android:id="@+id/DurationUpDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -36,9 +36,9 @@
         android:entries="@array/DurationSpinner"
         android:spinnerMode="dropdown"
         app:layout_constraintBottom_toBottomOf="@+id/NumberPickerDuration"
-        app:layout_constraintEnd_toEndOf="@+id/GpsSettingsUpDate"
+        app:layout_constraintEnd_toEndOf="@+id/DurationUpDate"
         app:layout_constraintHorizontal_bias="0.738"
-        app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
+        app:layout_constraintStart_toStartOf="@+id/DurationUpDate"
         app:layout_constraintTop_toTopOf="@+id/NumberPickerDuration" />
 
     <Spinner
@@ -58,8 +58,8 @@
         android:layout_height="72dp"
         android:layout_marginTop="20dp"
         app:layout_constraintEnd_toStartOf="@+id/durationSpinner"
-        app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
-        app:layout_constraintTop_toBottomOf="@+id/GpsSettingsUpDate" />
+        app:layout_constraintStart_toStartOf="@+id/DurationUpDate"
+        app:layout_constraintTop_toBottomOf="@+id/DurationUpDate" />
 
     <NumberPicker
         android:id="@+id/NumberPickerDistance"
@@ -67,8 +67,8 @@
         android:layout_height="72dp"
         android:layout_marginTop="20dp"
         app:layout_constraintEnd_toStartOf="@+id/durationSpinner"
-        app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintStart_toStartOf="@+id/DurationUpDate"
+        app:layout_constraintTop_toBottomOf="@+id/DistanceUpDate" />
 
     <NumberPicker
         android:id="@+id/NumberPickerSpeed"
@@ -85,7 +85,7 @@
         android:layout_marginTop="20dp"
         android:text="@string/VoyageSpeedChoice"
         android:textSize="18sp"
-        app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
+        app:layout_constraintStart_toStartOf="@+id/DurationUpDate"
         app:layout_constraintTop_toBottomOf="@+id/NumberPickerDistance" />
 
     <TextView
@@ -99,13 +99,13 @@
         app:layout_constraintTop_toTopOf="@+id/NumberPickerSpeed" />
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/DistanceUpDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:text="@string/GPSDistanceUpdate"
         android:textSize="18sp"
-        app:layout_constraintStart_toStartOf="@+id/GpsSettingsUpDate"
+        app:layout_constraintStart_toStartOf="@+id/DurationUpDate"
         app:layout_constraintTop_toBottomOf="@+id/NumberPickerDuration" />
 
 </android.support.constraint.ConstraintLayout>

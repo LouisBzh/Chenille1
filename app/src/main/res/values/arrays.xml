@@ -11,4 +11,13 @@
         <item name="Hectometres">Hectomètres</item>
         <item name="Kilometres">Kilomètres</item>
     </string-array>
+    <string-array name="DayOfWeek">
+        <item name="Lundi">Lundi</item>
+        <item name="Mardi">Mardi</item>
+        <item name="Mercredi">Mercredi</item>
+        <item name="Mercredi">Mercredi</item>
+        <item name="Jeudi">Jeudi</item>
+        <item name="Vendredi">Vendredi</item>
+        <item name="Dimanche">Dimanche</item>
+    </string-array>
 </resources>

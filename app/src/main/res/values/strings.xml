@@ -29,4 +29,9 @@
     <string name="VoyageSpeedChoice">Vitesse minimale pour la position \nVoyage :</string>
     <string name="SpeedUnit">km/h</string>
     <string name="GPSDistanceUpdate">Distance pour une mise à jour de la \nposition GPS</string>
+    <string name="DayOfWeek">DayStart</string>
+    <string name="PositionCalendar">PositionSelected</string>
+    <string name="AllDay">Tous les jours</string>
+    <string name="Annuler">Annuler</string>
+    <string name="Confirmer">Confirmer</string>
 </resources>

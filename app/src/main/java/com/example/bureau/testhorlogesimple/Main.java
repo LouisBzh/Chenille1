@@ -36,7 +36,9 @@ import java.util.ArrayList;
 
 import static com.google.android.gms.location.Geofence.NEVER_EXPIRE;
 
-public class Main extends AppCompatActivity{
+public class Main extends AppCompatActivity
+    implements View.OnClickListener,
+    View.OnLongClickListener{
     //Variables preferences
     public static final String MY_PREF="mesPrefs";
     public static final int RequestCode_SEND_SMS=1;
@@ -65,17 +67,10 @@ public class Main extends AppCompatActivity{
     int aigPositInt;//Actual Hand position
     String positGps="0000";//String coding if gps position inside Famille/Travail/Joker/Maison
     final String[] personID ={"Maman","Papa","Marie","Louis","Camille","Perrine","Mathilde","Défaut"};
-    int[] aigImgID ={R.mipmap.aig_maman,R.mipmap.aig_papa,R.mipmap.aig_marie,R.mipmap.aig_louis,R.mipmap.aig_camille,R.mipmap.aig_perrine,R.mipmap.aig_mathilde,R.mipmap.aig_defaut};//All Hand mipmap
-
-    /**
-    //Variables sms functions
-    BroadcastReceiver sentBroadcast;
-    BroadcastReceiver deliveredBroadcast;
-    IntentFilter sentIntentFilter;
-    IntentFilter deliveredIntentFilter;
-    String SENT = "SMS_SENT";
-    String DELIVERED = "SMS_DELIVERED";
-     **/
+    int[] aigImgID ={R.mipmap.aig_maman,R.mipmap.aig_papa,R.mipmap.aig_marie,R.mipmap.aig_louis,
+            R.mipmap.aig_camille,R.mipmap.aig_perrine,R.mipmap.aig_mathilde,R.mipmap.aig_defaut};//All Hand mipmap ID
+    int[] positionImgID={R.id.BtnFamille,R.id.BtnAuTravail,R.id.BtnVoyage,R.id.BtnDehors,R.id.BtnJoker,
+            R.id.BtnPenseAVous,R.id.BtnALaMaison,R.id.BtnPasDeNouvelles,R.id.BtnVeuxRentrer};//All position button ID
 
     @Override
     protected void onStart() {
@@ -97,6 +92,13 @@ public class Main extends AppCompatActivity{
         //Layout
         setContentView(R.layout.activity_main);
 
+        //Set onClick and onLongClick all the buttons
+        for(int button=0;button<=8;button++){
+            ImageView imagePosition = findViewById(positionImgID[button]);
+            imagePosition.setOnClickListener(this); // calling onClick() method
+            imagePosition.setOnLongClickListener(this); // calling onLongClick() method
+        }
+
         //Get preferences inside usable variables
         myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
         myVarEditor = myVar.edit();
@@ -108,7 +110,6 @@ public class Main extends AppCompatActivity{
         inTravailGps = myVar.getBoolean("inTravailGPS", false);
         inJokerGps = myVar.getBoolean("inJokerGPS", false);
         inMaisonGps = myVar.getBoolean("inMaisonGPS", false);
-
         smsSender=new SmsSender(Main.this);
         gpsTracker=new GPSTracker(Main.this);
         if(gpsTracker.canGetLocation()){
@@ -152,6 +153,69 @@ public class Main extends AppCompatActivity{
         }
     }
 
+    @Override
+    public void onClick(View v) {
+        int btnClickedID=v.getId();
+        int btnClickedNum=-1;
+        switch (btnClickedID){
+            case R.id.BtnFamille:
+            case R.id.BtnAuTravail:
+            case R.id.BtnVoyage:
+            case R.id.BtnDehors:
+            case R.id.BtnJoker:
+            case R.id.BtnALaMaison:
+                btnClickedNum = indexOfInt(positionImgID,btnClickedID)+1;
+                break;
+            case R.id.BtnPenseAVous:
+            case R.id.BtnPasDeNouvelles:
+            case R.id.BtnVeuxRentrer:
+                btnClickedNum = indexOfInt(positionImgID,btnClickedID)+1;
+            default:
+                Log.e(TAG, "onClick: Erreur");
+                break;
+        }
+        setPositManuel(String.valueOf(btnClickedNum));
+    }
+    @Override
+    public boolean onLongClick(View v) {
+        int btnClickedID=v.getId();
+        int btnClickedNum=-1;
+        switch (btnClickedID){
+            case R.id.BtnFamille:
+            case R.id.BtnAuTravail:
+            case R.id.BtnDehors:
+            case R.id.BtnJoker:
+            case R.id.BtnALaMaison:
+                btnClickedNum = indexOfInt(positionImgID,btnClickedID);
+                new DateHourSelector().showDialog(Main.this,btnClickedNum);
+                break;
+            case R.id.BtnPenseAVous:
+            case R.id.BtnPasDeNouvelles:
+            case R.id.BtnVeuxRentrer:
+                btnClickedNum = indexOfInt(positionImgID,btnClickedID);
+            default:
+                Log.e(TAG, "onClick: NonParamétrable");
+                break;
+        }
+        return false;
+    }
+
+    //Function to transform Boolean to String 1 or 0
+    public static String BooleantoString(boolean b) {
+        return b ? "1" : "0";
+    }
+    //Function to get index of a key inside a int array
+    public static int indexOfInt(int[] array, int key){
+        int returnedValue=-1;
+        for (int i=0;i<array.length;i++){
+            if(array[i]==key){
+                returnedValue=i;
+                break;
+            }
+        }
+        return returnedValue;
+    }
+
     //Hand positioning by user choice
     public void setPositManuel(String s) {
         //Set Hand image
@@ -185,40 +249,6 @@ public class Main extends AppCompatActivity{
             AlertDialog dialog = builder.create();
             dialog.show();
         }
-    }
-
-    //All buttons function
-    public void Famille (View view){
-        setPositManuel("1");
-    }
-    public void Travail (View view){
-        setPositManuel("2");
-    }
-    public void Voyage (View view){
-        setPositManuel("3");
-    }
-    public void Dehors (View view){
-        setPositManuel("4");
-    }
-    public void Joker (View view){
-        setPositManuel("5");
-    }
-    public void PenseAVous (View view){
-        setPositManuel("6");
-    }
-    public void ALaMaison (View view){
-        setPositManuel("7");
-    }
-    public void PasDeNouvelles (View view){
-        setPositManuel("8");
-    }
-    public void VeuxRentrer (View view){
-        setPositManuel("9");
-    }
-
-    //Function to transform Boolean to String 1 or 0
-    public static String BooleantoString(boolean b) {
-        return b ? "1" : "0";
     }
 
 
