@@ -16,15 +16,12 @@ import java.util.Date;
 public class AlarmReceiver extends BroadcastReceiver {
 
     private static final String TAG = AlarmReceiver.class.getSimpleName();
-    final String[] positionIDAll = {"Famille","Travail","Voyage","Dehors","Joker","Pense à Vous","Maison","Pas de Nouvelles","Veux rentrer"};
-    SmsSender smsSender;
+    final String[] positionIDAll = {"Famille","Travail","Voyage","Dehors","Joker","PenseAVous","Maison","PasDeNouvelles","VeuxRentrer"};
 
     //Preferences
     public static final String MY_PREF="mesPrefs";
     SharedPreferences myVar;
     SharedPreferences.Editor myVarEditor;
-    String aigLastPosit;
-    String aigNewPosit;//New Hand position
 
     //Notifications
     String nTitle;
@@ -37,21 +34,22 @@ public class AlarmReceiver extends BroadcastReceiver {
         Log.d(TAG, "Alarm triggered: "+positionIDAll[ID]);
         //Get the preferences registered
         myVar=context.getSharedPreferences(MY_PREF,context.MODE_PRIVATE);
-        Boolean notifDisplay=myVar.getBoolean("notifsEnable",true);
         myVarEditor = myVar.edit();
-        //Create sms sender function
-        smsSender=new SmsSender(context);
         //Check if Alarm should be triggered
-        if(myVar.getBoolean(positionIDAll[ID]+"CalDef",false)){
+        if(myVar.getBoolean(positionIDAll[ID]+"CalendarDefine",false)){
             boolean startAlarmType=intent.getBooleanExtra("StartAlarmType",false);
             if(startAlarmType){
                 Log.i(TAG, "StartEvent");
                 myVarEditor.putBoolean(positionIDAll[ID]+"CalIn",true);
-                nTitle = "Alarm - Start Event";
+                nTitle = positionIDAll[ID]+"- Start Event";
             }else{
                 Log.i(TAG, "EndEvent");
                 myVarEditor.putBoolean(positionIDAll[ID]+"CalIn",false);
-                nTitle = "Alarm - End Event";
+                if(positionIDAll[ID]=="PenseAVous"||positionIDAll[ID]=="VeuxRentrer"){
+                    myVarEditor.putBoolean(positionIDAll[ID]+"CalendarDefine",false);
+                    myVarEditor.putBoolean(positionIDAll[ID]+"CalendarIn",false);
+                }
+                nTitle = positionIDAll[ID]+"- End Event";
             }
             nContent = positionIDAll[ID];
             nTicker = positionIDAll[ID];
@@ -60,14 +58,16 @@ public class AlarmReceiver extends BroadcastReceiver {
         }else{
             Log.e(TAG,"Alarm triggered but position not define on calendar");
         }
-
+        new Verification().UpDate(context,"AlarmReceiver: calendar triggered");
     }
 
     public void setElapsedAlarm(Context context,int duration,int ID) {
         AlarmManager am =(AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-        Intent intent = new Intent(context, AlarmReceiver.class);
-        PendingIntent pi = PendingIntent.getBroadcast(context, ID, intent, 0);
-        am.setInexactRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis()+duration, 1000 * 60 * 10, pi); // Millisec * Second * Minute
+        Intent myIntent = new Intent(context, AlarmReceiver.class);
+        myIntent.putExtra("StartAlarmType",false);
+        myIntent.putExtra("PositionID",ID);
+        PendingIntent pi = PendingIntent.getBroadcast(context, ID*100, myIntent, 0);
+        am.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis()+duration, pi);
     }
 
     public void setRepeatedAlarm(Context context,Calendar calendarAlarm,Boolean StartAlarmType,int ID){
@@ -76,13 +76,6 @@ public class AlarmReceiver extends BroadcastReceiver {
         Intent myIntent = new Intent(context, AlarmReceiver.class);
         myIntent.putExtra("StartAlarmType",StartAlarmType);//Register inside intent if it's the start of the event or it's end
         myIntent.putExtra("PositionID",ID);//Register ID position inside intent
-        int cDay=Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
-        int cHour=Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        int cMin=Calendar.getInstance().get(Calendar.MINUTE);
-
-        int aDay=calendarAlarm.get(Calendar.DAY_OF_WEEK);
-        int aHour=calendarAlarm.get(Calendar.HOUR_OF_DAY);
-        int aMin=calendarAlarm.get(Calendar.MINUTE);
         // Check we aren't setting it in the past which would trigger it to fire instantly
         if(calendarAlarm.getTimeInMillis() < System.currentTimeMillis()) {
             calendarAlarm.add(Calendar.DAY_OF_YEAR, 7);
@@ -92,6 +85,11 @@ public class AlarmReceiver extends BroadcastReceiver {
     }
 
     public void cancelAlarm(Context context,int ID) {
+        myVar=context.getSharedPreferences(MY_PREF,context.MODE_PRIVATE);
+        myVarEditor = myVar.edit();
+        myVarEditor.putBoolean(positionIDAll[ID]+"CalendarDefine",false);
+        myVarEditor.putBoolean(positionIDAll[ID]+"CalendarIn",false);
+        myVarEditor.apply();
         Intent intent = new Intent(context, AlarmReceiver.class);
         PendingIntent sender = PendingIntent.getBroadcast(context, ID, intent, 0);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);

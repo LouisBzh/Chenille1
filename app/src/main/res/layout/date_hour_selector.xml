@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/DayLuJe"
+        android:layout_width="264dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="20dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ToggleButton
+            android:id="@+id/lundiBtn"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@drawable/circle_button"
+            android:textColor="@color/Black"
+            android:textOff="@string/Lundi"
+            android:textOn="@string/Lundi"
+            android:textSize="18sp"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="match_parent" />
+
+        <ToggleButton
+            android:id="@+id/mardiBtn"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@drawable/circle_button"
+            android:textColor="@color/Black"
+            android:textOff="@string/Mardi"
+            android:textOn="@string/Mardi"
+            android:textSize="18sp"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="match_parent" />
+
+        <ToggleButton
+            android:id="@+id/mercrediBtn"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@drawable/circle_button"
+            android:textColor="@color/Black"
+            android:textOff="@string/Mercredi"
+            android:textOn="@string/Mercredi"
+            android:textSize="18sp"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="match_parent" />
+
+        <ToggleButton
+            android:id="@+id/jeudiBtn"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@drawable/circle_button"
+            android:textColor="@color/Black"
+            android:textOff="@string/Jeudi"
+            android:textOn="@string/Jeudi"
+            android:textSize="18sp"
+            app:layout_constraintTop_toTopOf="parent" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/DayVeDi"
+        android:layout_width="196dp"
+        android:layout_height="60dp"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/DayLuJe">
+
+        <ToggleButton
+            android:id="@+id/vendrediBtn"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@drawable/circle_button"
+            android:textColor="@color/Black"
+            android:textOff="@string/Vendredi"
+            android:textOn="@string/Vendredi"
+            android:textSize="18sp"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="match_parent" />
+
+        <ToggleButton
+            android:id="@+id/samediBtn"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@drawable/circle_button"
+            android:textColor="@color/Black"
+            android:textOff="@string/Samedi"
+            android:textOn="@string/Samedi"
+            android:textSize="18sp"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Space
+            android:layout_width="8dp"
+            android:layout_height="match_parent" />
+
+        <ToggleButton
+            android:id="@+id/dimancheBtn"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:background="@drawable/circle_button"
+            android:textColor="@color/Black"
+            android:textOff="@string/Dimanche"
+            android:textOn="@string/Dimanche"
+            android:textSize="18sp"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/hourStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="40dp"
+        android:text="@string/HourStart"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/DayVeDi" />
+
+    <TimePicker
+        android:id="@+id/timeStart"
+        android:layout_width="wrap_content"
+        android:layout_height="100dp"
+        android:layout_marginTop="5dp"
+        android:timePickerMode="spinner"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/hourStart" />
+
+    <TextView
+        android:id="@+id/hourEnd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="25dp"
+        android:text="@string/HourEnd"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/timeStart" />
+
+    <TimePicker
+        android:id="@+id/timeEnd"
+        android:layout_width="wrap_content"
+        android:layout_height="100dp"
+        android:layout_marginTop="5dp"
+        android:timePickerMode="spinner"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/hourEnd" />
+
+</android.support.constraint.ConstraintLayout>

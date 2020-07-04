@@ -156,15 +156,15 @@ public class MapsActivity extends FragmentActivity
         //Iterating through all the locations to create circles and markers
         for (int i = 0; i < 4; i++) {
             //Getting the latitude of the i-th location
-            lat = myVar.getString("lat" + positionID[i], "0");
+            lat = myVar.getString(positionID[i]+"lat", "0");
             //Getting the longitude of the i-th location
-            lng = myVar.getString("lng" + positionID[i], "0");
+            lng = myVar.getString(positionID[i]+"lon", "0");
             //Getting the radius size of the i-th location
-            radiusSize = myVar.getInt("radiusSize" + positionID[i], 1000);
+            radiusSize = myVar.getInt(positionID[i]+"rad", 1000);
             // Getting the title of the i-th location
-            title = myVar.getString("title" + positionID[i], "Null");
+            title = myVar.getString(positionID[i]+"ID", "Null");
             //Getting if the i-th location is define
-            gpsDefine = myVar.getBoolean("gpsDefine" + positionID[i], false);
+            gpsDefine = myVar.getBoolean(positionID[i]+"GpsDefine", false);
             //Creating Markers
             drawMarker(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)), title, i, gpsDefine);
             //Drawing circle on the map
@@ -236,17 +236,15 @@ public class MapsActivity extends FragmentActivity
                                         // Add proximity
                                         setGeofence(pointing,radiusSize[0],zoneNumGPS);
                                         // Storing the latitude for the i-th location
-                                        myVarEditor.putString("lat" + positionID[zoneNumGPS], Double.toString(pointing.latitude));
+                                        myVarEditor.putString(positionID[zoneNumGPS]+"lat", Double.toString(pointing.latitude));
                                         // Storing the longitude for the i-th location
-                                        myVarEditor.putString("lng" + positionID[zoneNumGPS], Double.toString(pointing.longitude));
+                                        myVarEditor.putString(positionID[zoneNumGPS]+"lon", Double.toString(pointing.longitude));
                                         // Storing the radius size for the i-th location
-                                        myVarEditor.putInt("radiusSize" + positionID[zoneNumGPS], radiusSize[0]);
-                                        // Storing index of the last locations
-                                        myVarEditor.putInt("locationNum", zoneNumGPS);
+                                        myVarEditor.putInt(positionID[zoneNumGPS]+"rad", radiusSize[0]);
                                         // Storing the name to the shared preferences
-                                        myVarEditor.putString("title" + positionID[zoneNumGPS], positionID[zoneNumGPS]);
+                                        myVarEditor.putString(positionID[zoneNumGPS]+"ID", positionID[zoneNumGPS]);
                                         // Confirming GPS definition to the shared preferences
-                                        myVarEditor.putBoolean("gpsDefine" + positionID[zoneNumGPS], true);
+                                        myVarEditor.putBoolean(positionID[zoneNumGPS]+"GpsDefine", true);
                                         // Saving the values stored in the shared preferences
                                         myVarEditor.commit();
                                         Toast.makeText(getBaseContext(), "Proximity Alert is added", Toast.LENGTH_SHORT).show();
@@ -293,13 +291,14 @@ public class MapsActivity extends FragmentActivity
                         // Remove the proximity alert
                         removeGeofence(zoneNumGPS);
                         // Confirming GPS non definition to the shared preferences
-                        myVarEditor.putBoolean("gpsDefine" + positionID[zoneNumGPS], false);
+                        myVarEditor.putBoolean(positionID[zoneNumGPS]+"GpsDefine", false);
                         // Delete position on zone from sharedPreference
-                        myVarEditor.putBoolean("in"+positionID[zoneNumGPS]+"GPS", false);
+                        myVarEditor.putBoolean(positionID[zoneNumGPS]+"GpsIn", false);
                         // Committing the changes
                         myVarEditor.commit();
                         // Confirming message
                         Toast.makeText(getBaseContext(), "Proximity Alert is removed", Toast.LENGTH_LONG).show();
+                        new Verification().UpDate(MapsActivity.this, "MapsActivity: Geofences removed");
                     }
                 });
                 //Abandon deletion
@@ -410,37 +409,6 @@ public class MapsActivity extends FragmentActivity
         return geofencePendingIntent;
     }
 
-    /*
-    // Create GoogleApiClient instance
-    private void createGoogleApi() {
-        Log.d(TAG, "createGoogleApi()");
-        if ( googleApiClient == null ) {
-            googleApiClient = new GoogleApiClient.Builder( appContext )
-                    .addConnectionCallbacks( this )
-                    .addOnConnectionFailedListener( this )
-                    .addApi( LocationServices.API )
-                    .build();
-        }else{
-            Log.d(TAG, "GoogleApi already created");
-        }
-    }
-    // GoogleApiClient.ConnectionCallbacks connected
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        Log.i(TAG, "onConnected()");
-    }
-    // GoogleApiClient.ConnectionCallbacks suspended
-    @Override
-    public void onConnectionSuspended(int i) {
-        Log.w(TAG, "onConnectionSuspended()");
-    }
-    // GoogleApiClient.OnConnectionFailedListener fail
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Log.w(TAG, "onConnectionFailed()");
-    }
-     */
-
     //Check for permission to access Location
     private boolean checkPermission() {
         Log.d(TAG, "checkPermission()");
@@ -545,11 +513,6 @@ public class MapsActivity extends FragmentActivity
     @Override
     protected void onStop() {
         super.onStop();
-        /*
-        // Disconnect GoogleApiClient when stopping Activity
-        googleApiClient.disconnect();
-         */
-
     }
     @Override
     public void onResume() {

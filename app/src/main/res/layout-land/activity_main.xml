@@ -10,24 +10,24 @@
 
     <ImageView
         android:id="@+id/Aiguille"
-        android:layout_width="40dp"
-        android:layout_height="100dp"
+        android:layout_width="34dp"
+        android:layout_height="90dp"
         android:adjustViewBounds="false"
         android:contentDescription="@string/Aiguille"
         android:cropToPadding="false"
         android:rotation="0"
-        android:transformPivotX="20dp"
-        android:transformPivotY="100dp"
+        android:src="@mipmap/aig_defaut"
+        android:transformPivotX="17dp"
+        android:transformPivotY="80dp"
         android:translationZ="1dp"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintEnd_toEndOf="@+id/Fond"
-        app:layout_constraintVertical_bias="0.33"
         app:layout_constraintStart_toStartOf="@+id/Fond"
         app:layout_constraintTop_toTopOf="@+id/Fond"
+        app:layout_constraintVertical_bias="0.30"
         app:srcCompat="@mipmap/aig_defaut"
         tools:layout_conversion_absoluteHeight="47dp"
         tools:layout_conversion_absoluteWidth="123dp"
-        android:src="@mipmap/aig_defaut"
         tools:srcCompat="@mipmap/aig_defaut" />
 
     <ImageView
@@ -52,7 +52,6 @@
         android:layout_height="40dp"
         android:layout_marginTop="2dp"
         android:contentDescription="@string/BtnFamille"
-        android:onClick="Famille"
         app:layout_constraintEnd_toEndOf="@+id/Fond"
         app:layout_constraintStart_toStartOf="@+id/Fond"
         app:layout_constraintTop_toTopOf="@+id/Fond"
@@ -66,7 +65,6 @@
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
         android:contentDescription="@string/BtnTravail"
-        android:onClick="Travail"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintEnd_toEndOf="@+id/Fond"
         app:layout_constraintTop_toTopOf="@+id/Fond"
@@ -81,7 +79,6 @@
         android:layout_marginEnd="2dp"
         android:layout_marginRight="2dp"
         android:contentDescription="@string/BtnVoyage"
-        android:onClick="Voyage"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintEnd_toEndOf="@+id/Fond"
         app:layout_constraintTop_toTopOf="@+id/Fond"
@@ -97,7 +94,6 @@
         android:layout_marginEnd="1dp"
         android:layout_marginRight="1dp"
         android:contentDescription="@string/BtnDehors"
-        android:onClick="Dehors"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintEnd_toEndOf="@+id/Fond"
         app:layout_constraintTop_toTopOf="@+id/Fond"
@@ -111,7 +107,6 @@
         android:layout_height="38dp"
         android:layout_marginBottom="4dp"
         android:contentDescription="@string/BtnJoker"
-        android:onClick="Joker"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintEnd_toEndOf="@+id/Fond"
         app:layout_constraintHorizontal_bias="0.75"
@@ -127,7 +122,6 @@
         android:layout_marginRight="8dp"
         android:layout_marginBottom="4dp"
         android:contentDescription="@string/BtnPense"
-        android:onClick="PenseAVous"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintEnd_toEndOf="@+id/Fond"
         app:layout_constraintHorizontal_bias="0.25"
@@ -142,7 +136,6 @@
         android:layout_marginStart="4dp"
         android:layout_marginLeft="4dp"
         android:contentDescription="@string/BtnMaison"
-        android:onClick="ALaMaison"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintStart_toStartOf="@+id/Fond"
         app:layout_constraintTop_toTopOf="@+id/Fond"
@@ -158,7 +151,6 @@
         android:layout_marginLeft="2dp"
         android:layout_marginTop="8dp"
         android:contentDescription="@string/BtnPasNvl"
-        android:onClick="PasDeNouvelles"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintStart_toStartOf="@+id/Fond"
         app:layout_constraintTop_toTopOf="@+id/Fond"
@@ -173,7 +165,6 @@
         android:layout_marginStart="16dp"
         android:layout_marginLeft="16dp"
         android:contentDescription="@string/BtnRentrer"
-        android:onClick="VeuxRentrer"
         app:layout_constraintBottom_toBottomOf="@+id/Fond"
         app:layout_constraintStart_toStartOf="@+id/Fond"
         app:layout_constraintTop_toTopOf="@+id/Fond"
@@ -187,7 +178,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="30dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
         android:text="@string/Famille"
@@ -196,8 +187,9 @@
         android:textStyle="bold"
         app:fontFamily="cursive"
         app:layout_constraintEnd_toStartOf="@+id/Fond"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/AutoManualBtn" />
 
     <TextView
         android:id="@+id/textView2"
@@ -214,5 +206,118 @@
         app:layout_constraintEnd_toEndOf="@+id/Titre"
         app:layout_constraintStart_toStartOf="@+id/Titre"
         app:layout_constraintTop_toBottomOf="@+id/Titre" />
+
+    <ToggleButton
+        android:id="@+id/AutoManualBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginLeft="12dp"
+        android:padding="2dp"
+        android:text="@string/None"
+        android:textOff="@string/Auto"
+        android:textOn="@string/Manual"
+        android:textSize="18sp"
+        android:theme="@style/ToggleButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <ImageView
+        android:id="@+id/GpsFamille"
+        android:layout_width="10dp"
+        android:layout_height="15dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        app:layout_constraintBottom_toBottomOf="@+id/CalendarFamille"
+        app:layout_constraintStart_toEndOf="@+id/BtnFamille"
+        app:layout_constraintTop_toTopOf="@+id/CalendarFamille"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/gps_icon" />
+
+    <ImageView
+        android:id="@+id/GpsTravail"
+        android:layout_width="10dp"
+        android:layout_height="15dp"
+        app:layout_constraintBottom_toBottomOf="@+id/CalendarTravail"
+        app:layout_constraintStart_toEndOf="@+id/CalendarTravail"
+        app:layout_constraintTop_toTopOf="@+id/CalendarTravail"
+        app:srcCompat="@drawable/gps_icon" />
+
+    <ImageView
+        android:id="@+id/GpsJoker"
+        android:layout_width="10dp"
+        android:layout_height="15dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginLeft="4dp"
+        app:layout_constraintBottom_toBottomOf="@+id/CalendarJoker"
+        app:layout_constraintStart_toEndOf="@+id/BtnJoker"
+        app:layout_constraintTop_toTopOf="@+id/CalendarJoker"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/gps_icon" />
+
+    <ImageView
+        android:id="@+id/GpsMaison"
+        android:layout_width="10dp"
+        android:layout_height="15dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginLeft="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/CalendarMaison"
+        app:layout_constraintStart_toStartOf="@+id/BtnALaMaison"
+        app:layout_constraintTop_toTopOf="@+id/CalendarMaison"
+        app:layout_constraintVertical_bias="0.0"
+        app:srcCompat="@drawable/gps_icon" />
+
+    <ImageView
+        android:id="@+id/CalendarVeuxRentrer"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        app:layout_constraintBottom_toBottomOf="@+id/BtnVeuxRentrer"
+        app:layout_constraintStart_toStartOf="@+id/BtnVeuxRentrer"
+        app:srcCompat="@drawable/calendar_icon" />
+
+    <ImageView
+        android:id="@+id/CalendarFamille"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginTop="4dp"
+        app:layout_constraintEnd_toStartOf="@+id/GpsFamille"
+        app:layout_constraintTop_toTopOf="@+id/BtnFamille"
+        app:srcCompat="@drawable/calendar_icon" />
+
+    <ImageView
+        android:id="@+id/CalendarTravail"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginTop="4dp"
+        app:layout_constraintEnd_toEndOf="@+id/BtnAuTravail"
+        app:layout_constraintTop_toTopOf="@+id/BtnAuTravail"
+        app:srcCompat="@drawable/calendar_icon" />
+
+    <ImageView
+        android:id="@+id/CalendarJoker"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        app:layout_constraintEnd_toStartOf="@+id/GpsJoker"
+        app:layout_constraintTop_toTopOf="@+id/BtnJoker"
+        app:srcCompat="@drawable/calendar_icon" />
+
+    <ImageView
+        android:id="@+id/CalendarPenseAVous"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintStart_toStartOf="@+id/BtnPenseAVous"
+        app:layout_constraintTop_toTopOf="@+id/BtnPenseAVous"
+        app:srcCompat="@drawable/calendar_icon" />
+
+    <ImageView
+        android:id="@+id/CalendarMaison"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintEnd_toStartOf="@+id/GpsMaison"
+        app:layout_constraintTop_toTopOf="@+id/BtnALaMaison"
+        app:srcCompat="@drawable/calendar_icon" />
 
 </android.support.constraint.ConstraintLayout>

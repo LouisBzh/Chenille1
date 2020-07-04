@@ -41,6 +41,7 @@
             </intent-filter>
         </receiver>
         <receiver android:name=".AlarmReceiver" />
+        <receiver android:name=".NotificationSender$NotifButton"/>
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps" />

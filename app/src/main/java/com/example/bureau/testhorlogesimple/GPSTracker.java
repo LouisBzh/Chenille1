@@ -79,7 +79,12 @@ public class GPSTracker extends Service
 
     public GPSTracker(Context context) {
         this.mContext = context;
-        getLocation();
+        myVar = mContext.getSharedPreferences(MY_PREF, MODE_PRIVATE);
+        if(myVar.getBoolean("GpsEnable",false)) {
+            getLocation();
+        }else{
+            this.canGetLocation=false;
+        }
     }
 
     public void getLocation() {
@@ -94,7 +99,6 @@ public class GPSTracker extends Service
         } else {
             this.canGetLocation = true;
             if (checkPermission()) {
-                myVar = mContext.getSharedPreferences(MY_PREF, MODE_PRIVATE);
                 UPDATE_INTERVAL=myVar.getInt("timeUpDateGPS",1000);
                 UPDATE_DISTANCE=myVar.getInt("distanceUpDateGPS",100);
                 FASTEST_INTERVAL= (int) (UPDATE_INTERVAL/1.5);
@@ -192,14 +196,16 @@ public class GPSTracker extends Service
         Log.d(TAG, "onLocationChanged ["+location+"]");
         lastLocation = location;
         sendBroadcastMessage(location);
+        Boolean oldVoyage=myVar.getBoolean("Voyage",false);
         if(location.getSpeed()>speedMin){
-            SmsSender smsSender=new SmsSender(mContext);
             myVarEditor.putBoolean("Voyage",true);
-            smsSender.SendSMS("3");
         }else{
             myVarEditor.putBoolean("Voyage",false);
         }
         myVarEditor.apply();
+        if(!oldVoyage.equals(myVar.getBoolean("Voyage",false))) {
+            new Verification().UpDate(mContext, "GPSTracker: Voyage change status");
+        }
     }
 
     // Get last known location
@@ -274,7 +280,7 @@ public class GPSTracker extends Service
     //Ask ACCESS_FINE_LOCATION
     private void askPermission(){
         // Ask for permission if it wasn't granted yet
-        if(!(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if(!(ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED)){
             Log.d(TAG, "askPermission()");
             ActivityCompat.requestPermissions(

@@ -8,21 +8,26 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.content.res.AppCompatResources;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.NumberPicker;
 import android.widget.Spinner;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingClient;
@@ -45,17 +50,13 @@ public class Main extends AppCompatActivity
     SharedPreferences myVar;
     SharedPreferences.Editor myVarEditor;
     int aigChoosed;
-    String aigLastPosit;
 
     //Variables GPS
-    Boolean inFamilleGps;
-    Boolean inTravailGps;
-    Boolean inJokerGps;
-    Boolean inMaisonGps;
     private GeofencingClient geofencingClient;
     PendingIntent geofencePendingIntent;
     ArrayList<Geofence> geofenceList= new ArrayList<>(1);
     final String[] positionID = {"Famille", "Travail", "Joker", "Maison"};
+    final String[] positionIDAll = {"Famille","Travail","Voyage","Dehors","Joker","PenseAVous","Maison","PasDeNouvelles","VeuxRentrer"};
     GPSTracker gpsTracker;
     SmsSender smsSender;
 
@@ -63,9 +64,8 @@ public class Main extends AppCompatActivity
     private static final String TAG = Main.class.getSimpleName();
     Context appContext;
     ImageView aigImg;//Hand
-    String aigNewPosit;//New Hand position
+    ToggleButton AutoManualToggle;//Toggle Auto Vs Manual
     int aigPositInt;//Actual Hand position
-    String positGps="0000";//String coding if gps position inside Famille/Travail/Joker/Maison
     final String[] personID ={"Maman","Papa","Marie","Louis","Camille","Perrine","Mathilde","Défaut"};
     int[] aigImgID ={R.mipmap.aig_maman,R.mipmap.aig_papa,R.mipmap.aig_marie,R.mipmap.aig_louis,
             R.mipmap.aig_camille,R.mipmap.aig_perrine,R.mipmap.aig_mathilde,R.mipmap.aig_defaut};//All Hand mipmap ID
@@ -74,6 +74,7 @@ public class Main extends AppCompatActivity
 
     @Override
     protected void onStart() {
+        new Verification().UpDate(Main.this,"Main: starting");
         super.onStart();
     }
     @Override
@@ -98,83 +99,76 @@ public class Main extends AppCompatActivity
             imagePosition.setOnClickListener(this); // calling onClick() method
             imagePosition.setOnLongClickListener(this); // calling onLongClick() method
         }
-
         //Get preferences inside usable variables
         myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
         myVarEditor = myVar.edit();
         aigChoosed = myVar.getInt("aigChoosed", 8);
         aigImg = findViewById(R.id.Aiguille);
         aigImg.setImageResource(aigImgID[aigChoosed - 1]);
-        aigLastPosit = myVar.getString("aigLastPosit", "4");
-        inFamilleGps = myVar.getBoolean("inFamilleGPS", false);
-        inTravailGps = myVar.getBoolean("inTravailGPS", false);
-        inJokerGps = myVar.getBoolean("inJokerGPS", false);
-        inMaisonGps = myVar.getBoolean("inMaisonGPS", false);
-        smsSender=new SmsSender(Main.this);
-        gpsTracker=new GPSTracker(Main.this);
-        if(gpsTracker.canGetLocation()){
-            double latitude = gpsTracker.latitude;
-            double longitude = gpsTracker.longitude;
-            double speed = gpsTracker.speed;
-            if(latitude!=0) {
-                Toast.makeText(getApplicationContext(), "Votre position est - \nLat: "
-                        + latitude + "\nLong: " + longitude + "\nVit: " + speed, Toast.LENGTH_LONG).show();
-            }
-        }else{
-            /** can't get location
-            *GPS or Network is not enabled
-            *Ask user to enable GPS/network in settings
-             **/
-            gpsTracker.showSettingsAlert();
-        }
-        
 
+        //Set toggle Manual Auto on listener
+        AutoManualToggle=findViewById(R.id.AutoManualBtn);
+        String AutoManualSet=myVar.getString("AutoManualSet","Auto");
+        AutoManualToggle.setChecked(AutoManualSet.equals("Manual"));
+        AutoManualToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    myVarEditor.putString("AutoManualSet","Manual");
+                    myVarEditor.apply();
+                }else{
+                    myVarEditor.putString("AutoManualSet","Auto");
+                    myVarEditor.apply();
+                    setHandRotation(new Verification().UpDate(Main.this,"Main: toogle button set on auto"));
+                }
+            }
+        });
+
+        if(myVar.getBoolean("GpsEnable",false)) {
+            gpsTracker = new GPSTracker(Main.this);
+            if (gpsTracker.canGetLocation()) {
+                Toast.makeText(getApplicationContext(), "GPS activated ",Toast.LENGTH_SHORT).show();
+            }else{
+                Toast.makeText(getApplicationContext(), "Can't find your location ",Toast.LENGTH_SHORT).show();
+            }
+        }
         //Check Permission
-        if(checkPermission()) {
+        if(checkSmsPermission()) {
+            smsSender=new SmsSender(Main.this);
+            smsSender.Registered();
             appContext = getApplicationContext();
             geofencingClient = LocationServices.getGeofencingClient(appContext);
-            //Check gps information and hand positioning
-            positGps = BooleantoString(inFamilleGps) + BooleantoString(inTravailGps) + BooleantoString(inJokerGps) + BooleantoString(inMaisonGps);
-            if(!myVar.getBoolean("Voyage",false)){
-                if (positGps.equals("0000")) {
-                    Log.i(TAG,"Not inside any Geofence, neither in movement");
-                    setPositManuel(aigLastPosit);
-                }else{
-                    Log.i(TAG,"Inside a Geofence but not in movement");
-                    Toast.makeText(this,"Position GPS defined",Toast.LENGTH_SHORT).show();
-                }
-            }else{
-                Log.i(TAG,"In movement");
-                setPositManuel("3");
-            }
-
+            setHandRotation(myVar.getString("aigLastPosit","4"));
         }else{
             askPermission();
         }
+        setIcon();
     }
 
     @Override
     public void onClick(View v) {
-        int btnClickedID=v.getId();
-        int btnClickedNum=-1;
-        switch (btnClickedID){
-            case R.id.BtnFamille:
-            case R.id.BtnAuTravail:
-            case R.id.BtnVoyage:
-            case R.id.BtnDehors:
-            case R.id.BtnJoker:
-            case R.id.BtnALaMaison:
-                btnClickedNum = indexOfInt(positionImgID,btnClickedID)+1;
-                break;
-            case R.id.BtnPenseAVous:
-            case R.id.BtnPasDeNouvelles:
-            case R.id.BtnVeuxRentrer:
-                btnClickedNum = indexOfInt(positionImgID,btnClickedID)+1;
-            default:
-                Log.e(TAG, "onClick: Erreur");
-                break;
+        if(myVar.getString("AutoManualSet","Auto").equals("Manual")) {
+            int btnClickedID = v.getId();
+            switch (btnClickedID) {
+                case R.id.BtnFamille:
+                case R.id.BtnAuTravail:
+                case R.id.BtnVoyage:
+                case R.id.BtnDehors:
+                case R.id.BtnJoker:
+                case R.id.BtnALaMaison:
+                    setPositManuel(String.valueOf(indexOfInt(positionImgID, btnClickedID) + 1));
+                    break;
+                case R.id.BtnPenseAVous:
+                case R.id.BtnPasDeNouvelles:
+                case R.id.BtnVeuxRentrer:
+                    setPositManuel(String.valueOf(indexOfInt(positionImgID, btnClickedID) + 1));
+                case R.id.AutoManualBtn:
+                    Log.i(TAG, "Toggle Auto/Manual pressed");
+                default:
+                    Log.e(TAG, "onClick: Erreur");
+                    break;
+            }
         }
-        setPositManuel(String.valueOf(btnClickedNum));
     }
     @Override
     public boolean onLongClick(View v) {
@@ -193,6 +187,7 @@ public class Main extends AppCompatActivity
             case R.id.BtnPasDeNouvelles:
             case R.id.BtnVeuxRentrer:
                 btnClickedNum = indexOfInt(positionImgID,btnClickedID);
+                new TimePicker().showDialog(Main.this,btnClickedNum);
             default:
                 Log.e(TAG, "onClick: NonParamétrable");
                 break;
@@ -217,37 +212,82 @@ public class Main extends AppCompatActivity
     }
 
     //Hand positioning by user choice
-    public void setPositManuel(String s) {
-        //Set Hand image
-        try {
-            aigPositInt = Integer.parseInt(s);
-        } catch(NumberFormatException nfe) {
-            Log.e(TAG,"Value passed not an Integer");
-            Toast.makeText(getBaseContext(), "Valeur position de l'aiguille non sous forme d'entier", Toast.LENGTH_LONG).show();
-        }
-        if (positGps.equals("0000")||!myVar.getBoolean("GpsEnable",false)){//If not inside any geofence
-            aigImg.setRotation(aigPositInt * 40 + 320);
-            smsSender.SendSMS(s);
-        }else {
+    public void setPositManuel(final String s) {
+        myVar = getSharedPreferences(MY_PREF, Context.MODE_PRIVATE);
+        myVarEditor = myVar.edit();
+        myVarEditor.putString("ManualPosit",s);
+        myVarEditor.apply();
+        AutoManualToggle.setChecked(true);
+        setHandRotation(s);
+    }
+
+    public void setHandRotation(String s){
+        String s1=new Verification().UpDate(Main.this, "Main: setting hand rotation");
+        if(s1.equals("ErreurSurEcritureCal")||s1.equals("ErreurSurEcritureGPS")||s1.equals("ErreurSurEcritureGPSCal")){
             AlertDialog.Builder builder = new AlertDialog.Builder(Main.this);
-            builder.setTitle("Attention vous êtes définis dans une zone GPS !");
+            if(s1.equals("ErreurSurEcritureCal")){
+                builder.setTitle("Attention vous êtes définis dans un évènement du calendrier !");
+            }else if(s1.equals("ErreurSurEcritureGPS")){
+                builder.setTitle("Attention vous êtes définis dans une zone GPS!");
+            }else if(s1.equals("ErreurSurEcritureGPSCal")){
+                builder.setTitle("Attention vous êtes définis dans une zone GPS et dans un évènement du calendrier !");
+            }
             builder.setMessage("Etes vous sûr de vouloir écraser votre position actuelle ? \n"+
                     "(Votre position se remettra à jour au prochain franchissement)");
             builder.setNegativeButton("Non", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
+                    AutoManualToggle.setChecked(false);
+                    myVarEditor.putBoolean("SurEcritureAutorise",false);
+                    myVarEditor.apply();
+                    return;
                 }
             });
             builder.setPositiveButton("Oui", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int id) {
-                    aigImg.setRotation(aigPositInt * 40 + 320);
-                    smsSender.SendSMS(String.valueOf(aigPositInt));
+                    AutoManualToggle.setChecked(true);
+                    myVarEditor.putBoolean("SurEcritureAutorise",true);
+                    myVarEditor.apply();
+                    setHandRotation(new Verification().UpDate(Main.this,"Main: setting hand rotation error"));
+                    return;
                 }
             });
             AlertDialog dialog = builder.create();
             dialog.show();
+        }else {
+            try {
+                aigPositInt = Integer.parseInt(s);
+                aigImg.setRotation(aigPositInt * 40 + 320);
+            } catch (NumberFormatException nfe) {
+                Log.e(TAG, "Value passed not an Integer");
+                Toast.makeText(getBaseContext(), "Valeur position de l'aiguille non sous forme d'entier", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    public void setIcon(){
+        for (String posit:positionIDAll){
+            String[] iconAll= new String[]{"Calendar", "Gps"};
+            for(String icon:iconAll) {
+                try {
+                    int IdView=getResources().getIdentifier(icon+posit,"id",getPackageName());
+                    ImageView iconView = findViewById(IdView);
+                    int IdDrawable=getResources().getIdentifier(icon.toLowerCase()+"_icon","drawable",getPackageName());
+                    iconView.setImageResource(IdDrawable);
+                    if(myVar.getBoolean(posit+icon+"Define", false)){
+                        if(myVar.getBoolean(posit+icon+"In", false)){
+                            iconView.setColorFilter(getResources().getColor(R.color.IconIn));
+                        }else{
+                            iconView.setColorFilter(getResources().getColor(R.color.IconDefine));
+                        }
+                    }else{
+                        iconView.setColorFilter(getResources().getColor(R.color.IconOff));
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG,"Icon view "+icon+" not existant for position "+posit);
+                }
+            }
         }
     }
 
@@ -464,7 +504,7 @@ public class Main extends AppCompatActivity
     }
 
     // Check for permission to access Location
-    private boolean checkPermission() {
+    private boolean checkSmsPermission() {
         Log.d(TAG, "checkPermission()");
         return (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
                 == PackageManager.PERMISSION_GRANTED );
@@ -500,6 +540,7 @@ public class Main extends AppCompatActivity
                         permissionsDeniedForever();
                     }
                 }
+                recreate();
                 break;
             }
         }

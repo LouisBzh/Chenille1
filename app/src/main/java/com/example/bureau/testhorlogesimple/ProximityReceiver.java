@@ -38,10 +38,10 @@ public class ProximityReceiver extends BroadcastReceiver {
     String nContent;
     String nTicker;
     //Variables GPS
-    Boolean inFamilleGps;
-    Boolean inTravailGps;
-    Boolean inJokerGps;
-    Boolean inMaisonGps;
+    Boolean FamilleGpsIn;
+    Boolean TravailGpsIn;
+    Boolean JokerGpsIn;
+    Boolean MaisonGpsIn;
     String positGps="0000";//String coding if gps position inside Famille/Travail/Joker/Maison
     //Variables sms functions
     SmsSender smsSender;
@@ -81,50 +81,18 @@ public class ProximityReceiver extends BroadcastReceiver {
                 if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
                     Toast.makeText(context, "Entering the region", Toast.LENGTH_LONG).show();
                     nTitle = "Proximity - Entry";
-                    myVarEditor.putBoolean("in" + proximity_name + "GPS", true);
+                    myVarEditor.putBoolean(proximity_name + "GpsIn", true);
                 } else {
                     Toast.makeText(context, "Exiting the region", Toast.LENGTH_LONG).show();
                     nTitle = "Proximity - Exit";
-                    myVarEditor.putBoolean("in" + proximity_name + "GPS", false);
+                    myVarEditor.putBoolean(proximity_name + "GpsIn", false);
                 }
                 nContent = proximity_name;
                 nTicker = proximity_name;
                 myVarEditor.apply();
                 new NotificationSender().Build(context,nTitle,nContent,nTicker);
             }
-
-            //Send SMS
-            aigLastPosit=myVar.getString("aigLastPosit","4");
-            inFamilleGps=myVar.getBoolean("inFamilleGPS",false);
-            inTravailGps=myVar.getBoolean("inTravailGPS",false);
-            inJokerGps=myVar.getBoolean("inJokerGPS",false);
-            inMaisonGps=myVar.getBoolean("inMaisonGPS",false);
-
-            //Check gps information and hand positioning
-            positGps = BooleantoString(inFamilleGps) + BooleantoString(inTravailGps) + BooleantoString(inJokerGps) + BooleantoString(inMaisonGps);
-            switch (positGps) {
-                case "0000": //Not inside any Geofence
-                    aigNewPosit = "4";
-                    break;
-                case "1000": //Inside Family Geofence
-                    aigNewPosit = "1";
-                    break;
-                case "0100": //Inside Travail Geofence
-                case "1100": //Inside Family and Travail Geofence
-                    aigNewPosit = "2";
-                    break;
-                case "0010": //Inside Joker Geofence
-                    aigNewPosit = "5";
-                    break;
-                case "0001": //Inside Maison Geofence
-                    aigNewPosit = "7";
-                    break;
-                default:
-                    aigNewPosit = aigLastPosit; //If none of above possibility = ERROR
-                    Toast.makeText(context, "Configuration des zones non pris en charge. Veuillez vérifier la disposition des zones GPS.", Toast.LENGTH_LONG).show();
-                    break;
-            }
-            smsSender.SendSMS(aigNewPosit);
+            new Verification().UpDate(context,"ProximityReceiver: Geofence triggered");
         }else{
             Log.e(TAG,"Situation de création ou de déclenchement géofence malgré GPS désactivé !");
         }

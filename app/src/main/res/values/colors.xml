@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
+    <color name="colorPrimary">#EDE19F</color>
     <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="BtnOnCenter">#BD3232</color>
+    <color name="BtnOnContour">#581616</color>
+    <color name="BtnOffCenter">#EDE19F</color>
+    <color name="BtnOffContour">#867E59</color>
+    <color name="IconOff">#FFFFFF</color>
+    <color name="IconDefine">#696246</color>
+    <color name="IconIn">#A52A2A</color>
+    <color name="colorAccent">#A52A2A</color>
     <color name="White">#FFFFFF</color>
     <color name="Ivory">#FFFFF0</color>
     <color name="LightYellow">#FFFFE0</color>
@@ -42,7 +49,7 @@
     <color name="GhostWhite">#F8F8FF</color>
     <color name="MintCream">#F5FFFA</color>
     <color name="WhiteSmoke">#F5F5F5</color>
-    <color name="Beige">#F5F5DC</color>
+    <color name="Beige">#EDE19F</color>
     <color name="Wheat">#F5DEB3</color>
     <color name="SandyBrown">#F4A460</color>
     <color name="Azure">#F0FFFF</color>
@@ -78,7 +85,7 @@
     <color name="PowderBlue">#B0E0E6</color>
     <color name="LightSteelBlue">#B0C4DE</color>
     <color name="PaleTurquoise">#AFEEEE</color>
-    <color name="GreenYellow">#ADFF2F</color>
+    <color name="GreenYellow">#AEEA00</color>
     <color name="LightBlue">#ADD8E6</color>
     <color name="DarkGray">#A9A9A9</color>
     <color name="Brown">#A52A2A</color>
@@ -147,6 +154,8 @@
     <color name="Travail">#0094A2</color>
     <color name="Joker">#58F300</color>
     <color name="Maison">#FF8F00</color>
+    <color name="BeigeSombre">#565033</color>
+    <color name="None">#00FFFFFF</color>
 
     <array name="colors">
         <item name="Famille">@color/Famille</item>

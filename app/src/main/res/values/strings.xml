@@ -34,4 +34,19 @@
     <string name="AllDay">Tous les jours</string>
     <string name="Annuler">Annuler</string>
     <string name="Confirmer">Confirmer</string>
+    <string name="Manual">Manuel</string>
+    <string name="Auto">Auto</string>
+    <string name="AutoManual">AutoManuel</string>
+    <string name="None" />
+    <string name="Day">Day</string>
+    <string name="Lundi">Lu</string>
+    <string name="Vendredi">Ve</string>
+    <string name="Samedi">Sa</string>
+    <string name="Dimanche">Di</string>
+    <string name="Mardi">Ma</string>
+    <string name="Mercredi">Me</string>
+    <string name="Jeudi">Je</string>
+    <string name="HourStart">Heure de début</string>
+    <string name="HourEnd">Heure de fin</string>
+    <string name="TextDurationPicker">L\'aiguille restera dans cette position pour la durée indiquée à partir de la validation de l\'évènement.</string>
 </resources>

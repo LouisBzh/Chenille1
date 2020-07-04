@@ -8,4 +8,10 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="ToggleButton" parent="Base.Widget.AppCompat.Button">
+        <item name="colorButtonNormal">@color/Beige</item>
+        <item name="android:textColor">@color/BeigeSombre</item>
+        <item name="colorAccent">@color/Brown</item>
+    </style>
+
 </resources>

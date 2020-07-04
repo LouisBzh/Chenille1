@@ -11,17 +11,20 @@ import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.telephony.SmsManager;
+import android.util.Log;
 import android.widget.Toast;
 
 import static com.example.bureau.testhorlogesimple.Main.MY_PREF;
 
 public class SmsSender extends Service {
+    private static final String TAG = SmsSender.class.getSimpleName();
     //Service
     Context mContext;
     //Preference
     SharedPreferences myVar;
     SharedPreferences.Editor myVarEditor;
     //Variables sms functions
+    boolean register;
     BroadcastReceiver sentBroadcast;
     BroadcastReceiver deliveredBroadcast;
     IntentFilter sentIntentFilter;
@@ -31,7 +34,7 @@ public class SmsSender extends Service {
     public static final int RequestCode_SEND_SMS=1;
 
     public SmsSender(Context context){
-        mContext=context.getApplicationContext();
+        mContext=context;
         onCreate();
     }
 
@@ -44,48 +47,57 @@ public class SmsSender extends Service {
         //Creation emission/reception sms functions
         sentIntentFilter = new IntentFilter(SENT);
         deliveredIntentFilter = new IntentFilter(DELIVERED);
+        //Register emission/reception sms
         sentBroadcast = new sentReceiver();
         deliveredBroadcast = new deliveredReceiver();
-        //Register emission/reception sms
+
+    }
+    protected void Registered(){
         mContext.registerReceiver(sentBroadcast, sentIntentFilter);
         mContext.registerReceiver(deliveredBroadcast, deliveredIntentFilter);
+        this.register=true;
     }
 
     protected void unRegistered() {
-        //Delete registration emission/reception sms
-        if(deliveredBroadcast!=null) {
+        try {
             mContext.unregisterReceiver(deliveredBroadcast);
             deliveredBroadcast=null;
-        }
-        if (sentBroadcast!=null) {
             mContext.unregisterReceiver(sentBroadcast);
             sentBroadcast=null;
+            this.register=false;
+        }catch (IllegalArgumentException e){
+            e.printStackTrace();
         }
     }
 
     //Sms functions
     //Function to send an sms
     public void SendSMS(String x) {
-        //Test if last position different than new one
-        if (Integer.parseInt(myVar.getString("aigLastPosit", "1")) != Integer.parseInt(x)) {
+        try {
+            //Test if last position different than new one
+            if (Integer.parseInt(myVar.getString("aigLastPosit", "1")) != Integer.parseInt(x)) {
+                PendingIntent sentPI = PendingIntent.getBroadcast(mContext, RequestCode_SEND_SMS,
+                        new Intent(SENT), PendingIntent.FLAG_CANCEL_CURRENT);
 
-            PendingIntent sentPI = PendingIntent.getBroadcast(mContext, 0,
-                    new Intent(SENT), 0);
+                PendingIntent deliveredPI = PendingIntent.getBroadcast(mContext, RequestCode_SEND_SMS,
+                        new Intent(DELIVERED), PendingIntent.FLAG_CANCEL_CURRENT);
 
-            PendingIntent deliveredPI = PendingIntent.getBroadcast(mContext, 0,
-                    new Intent(DELIVERED), 0);
-
-            // Storing the position
-            myVarEditor.putString("aigLastPosit", x);
-            myVarEditor.apply();
-            //---when the SMS has been sent--
-            android.telephony.SmsManager sms = android.telephony.SmsManager.getDefault();
-            sms.sendTextMessage("+33769424262", null, x, sentPI, deliveredPI);
+                // Storing the position
+                myVarEditor.putString("aigLastPosit", x);
+                myVarEditor.apply();
+                //---when the SMS has been sent--
+                android.telephony.SmsManager sms = android.telephony.SmsManager.getDefault();
+                sms.sendTextMessage("+33769424262", null, x, sentPI, deliveredPI);
+                Intent starterIntent = new Intent(mContext,Main.class);
+                mContext.startActivity(starterIntent);
+            }
+        } catch(NumberFormatException nfe) {
+            Log.e(TAG,"Value passed not an Integer");
         }
     }
     //Sms sending receiver and Error handling
     public class sentReceiver extends BroadcastReceiver {
-        Context receiverContext=mContext.getApplicationContext();
+        Context receiverContext=mContext;
         @Override
         public void onReceive(Context arg0, Intent arg1) {
             switch (getResultCode()) {
@@ -114,7 +126,7 @@ public class SmsSender extends Service {
     }
     //Sms delivered receiver and Error handling
     public class deliveredReceiver extends BroadcastReceiver{
-        Context receiverContext= mContext.getApplicationContext();
+        Context receiverContext= mContext;
         @Override
         public void onReceive(Context arg0, Intent arg1) {
             switch (getResultCode()) {
